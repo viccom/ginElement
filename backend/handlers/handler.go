@@ -3,11 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nalgeon/redka"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	//"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka"
 	"net/http"
 	"sync"
 )
@@ -17,15 +15,15 @@ type iotFunc func(id string, stopChan chan struct{}, rtdb *redka.DB)
 
 // 全局变量
 var (
-	workers     = make(map[string]chan struct{}) // 存储所有子线程的停止通道
-	workersLock sync.Mutex                       // 用于保护 workers 的并发访问
+	Workers     = make(map[string]chan struct{}) // 存储所有子线程的停止通道
+	workersLock sync.Mutex                       // 用于保护 Workers 的并发访问
 	//nextID      = 1                              // 用于生成唯一的子线程 ID
 
 	// 定义字符串数组
 	funcCode = []string{"findmax", "simtodb", "periodicPrint", "modbus"}
 	funcMap  = map[string]testFunc{
 		"findmax":       findmax,
-		"periodicPrint": periodicPrint,
+		"periodicPrint": PeriodicPrint,
 	}
 	// 定义字符串数组
 	iotappCode = []string{"simtodb", "modbus"}
@@ -114,7 +112,7 @@ func StartWorker(c *gin.Context) {
 	}()
 	//fn(uuidstr, stopChan) // 调用对应的函数
 	// 将子线程的停止通道存储到全局变量中
-	workers[uuidstr] = stopChan
+	Workers[uuidstr] = stopChan
 
 	// 返回子线程 ID
 	c.JSON(http.StatusOK, gin.H{
@@ -148,7 +146,7 @@ func StopWorker(c *gin.Context) {
 	}
 
 	// 查找子线程的停止通道
-	stopChan, exists := workers[workerID]
+	stopChan, exists := Workers[workerID]
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "Worker not found",
@@ -160,7 +158,7 @@ func StopWorker(c *gin.Context) {
 	close(stopChan)
 
 	// 从全局变量中移除子线程
-	delete(workers, workerID)
+	delete(Workers, workerID)
 
 	// 返回成功消息
 	c.JSON(http.StatusOK, gin.H{
@@ -182,8 +180,8 @@ func ListWorkers(c *gin.Context) {
 	defer workersLock.Unlock()
 
 	// 获取所有子线程的 ID
-	ids := make([]string, 0, len(workers))
-	for id := range workers {
+	ids := make([]string, 0, len(Workers))
+	for id := range Workers {
 		ids = append(ids, id)
 	}
 
@@ -388,7 +386,7 @@ func StartApp(c *gin.Context, rtdb *redka.DB) {
 	}()
 	//fn(uuidstr, stopChan) // 调用对应的函数
 	// 将子线程的停止通道存储到全局变量中
-	workers[uuidstr] = stopChan
+	Workers[uuidstr] = stopChan
 	// 返回子线程 ID
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Worker started",

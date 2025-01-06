@@ -44,7 +44,7 @@ func printTime() {
 }
 
 // periodicPrint函数，周期打印时间
-func periodicPrint(id string, stopChan chan struct{}) {
+func PeriodicPrint(id string, stopChan chan struct{}) {
 	for {
 		select {
 		case <-stopChan: // 如果收到停止信号，退出循环
