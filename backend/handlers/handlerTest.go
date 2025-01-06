@@ -90,7 +90,7 @@ func findmax(id string, stopChan chan struct{}) {
 }
 
 // simtodb函数：周期性地从 10 个随机数中找到最大值并打印
-func simtodb(id string, stopChan chan struct{}, rtdb *redka.DB) {
+func Simtodb(id string, stopChan chan struct{}, rtdb *redka.DB) {
 	// 使用当前时间的纳秒级时间戳作为种子
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)

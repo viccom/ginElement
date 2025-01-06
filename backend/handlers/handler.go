@@ -28,7 +28,7 @@ var (
 	// 定义字符串数组
 	iotappCode = []string{"simtodb", "modbus"}
 	iotappMap  = map[string]iotFunc{
-		"simtodb": simtodb,
+		"simtodb": Simtodb,
 		"modbus":  handlermobus,
 	}
 )

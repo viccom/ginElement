@@ -37,7 +37,7 @@ func main() {
 	// 提供 Swagger UI 静态文件
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 启动一个子线程运行 periodicPrint 函数
-	autostartWorker(handlers.PeriodicPrint, "periodicPrint")
+	autostartWorker(handlers.Simtodb, rtdb, "simtodb")
 	// 启动服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")
@@ -46,7 +46,7 @@ func main() {
 	}
 }
 
-func autostartWorker(workerFunc func(string, chan struct{}), workerName string) {
+func autostartWorker(workerFunc func(string, chan struct{}, *redka.DB), rtdb *redka.DB, workerName string) {
 	workersLock := &sync.Mutex{}
 	workersLock.Lock()
 	defer workersLock.Unlock()
@@ -64,7 +64,7 @@ func autostartWorker(workerFunc func(string, chan struct{}), workerName string) 
 				close(stopChan)
 			}
 		}()
-		workerFunc(uuidstr, stopChan)
+		workerFunc(uuidstr, stopChan, rtdb)
 	}()
 
 	handlers.Workers[uuidstr] = stopChan
