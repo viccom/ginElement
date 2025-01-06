@@ -12,7 +12,7 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 	// 线程管理
 	r.POST("/api/v1/startWorker/:appcode", func(c *gin.Context) {
 		// 将数据库连接传递给 handlers.StartWorker
-		handlers.StartWorker(c, rtdb)
+		handlers.StartWorker(c)
 	}) // 启动子线程
 	r.POST("/api/v1/stopWorker/:workerid", handlers.StopWorker) // 停止子线程
 	r.GET("/api/v1/listWorkers", handlers.ListWorkers)          // 查询运行的子线程

@@ -44,8 +44,7 @@ func printTime() {
 }
 
 // periodicPrint函数，周期打印时间
-func periodicPrint(id string, stopChan chan struct{}, rtdb *redka.DB) {
-	_ = rtdb.Key()
+func periodicPrint(id string, stopChan chan struct{}) {
 	for {
 		select {
 		case <-stopChan: // 如果收到停止信号，退出循环
@@ -60,9 +59,8 @@ func periodicPrint(id string, stopChan chan struct{}, rtdb *redka.DB) {
 }
 
 // findmax函数：周期性地从 10 个随机数中找到最大值并打印
-func findmax(id string, stopChan chan struct{}, rtdb *redka.DB) {
+func findmax(id string, stopChan chan struct{}) {
 	// 使用当前时间的纳秒级时间戳作为种子
-	_ = rtdb.Key()
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
 	for {

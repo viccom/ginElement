@@ -12,19 +12,8 @@ import (
 	"sync"
 )
 
-//	type Handler struct {
-//		CfgDB *redka.DB
-//		RtDB  *redka.DB
-//	}
-//
-//	func NewHandler(cfgdb *redka.DB, rtdb *redka.DB) *Handler {
-//		return &Handler{
-//			CfgDB: cfgdb,
-//			RtDB:  rtdb,
-//		}
-//	}
-
-type MyFunc func(id string, stopChan chan struct{}, rtdb *redka.DB)
+type testFunc func(id string, stopChan chan struct{})
+type iotFunc func(id string, stopChan chan struct{}, rtdb *redka.DB)
 
 // 全局变量
 var (
@@ -34,11 +23,15 @@ var (
 
 	// 定义字符串数组
 	funcCode = []string{"findmax", "simtodb", "periodicPrint", "modbus"}
-	funcMap  = map[string]MyFunc{
+	funcMap  = map[string]testFunc{
 		"findmax":       findmax,
-		"simtodb":       simtodb,
 		"periodicPrint": periodicPrint,
-		"modbus":        handlermobus,
+	}
+	// 定义字符串数组
+	iotappCode = []string{"simtodb", "modbus"}
+	iotappMap  = map[string]iotFunc{
+		"simtodb": simtodb,
+		"modbus":  handlermobus,
 	}
 )
 
@@ -75,7 +68,7 @@ type AppConfig struct {
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/startWorker/{appcode} [post]
-func StartWorker(c *gin.Context, rtdb *redka.DB) {
+func StartWorker(c *gin.Context) {
 	workersLock.Lock()
 	defer workersLock.Unlock()
 
@@ -117,7 +110,7 @@ func StartWorker(c *gin.Context, rtdb *redka.DB) {
 				close(stopChan) // 关闭 channel
 			}
 		}()
-		fn(uuidstr, stopChan, rtdb) // 调用对应的函数
+		fn(uuidstr, stopChan) // 调用对应的函数
 	}()
 	//fn(uuidstr, stopChan) // 调用对应的函数
 	// 将子线程的停止通道存储到全局变量中
@@ -213,7 +206,7 @@ func ListAppcode(c *gin.Context) {
 	// 返回 funcCode	列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "appcode",
-		"appcode": funcCode,
+		"appcode": iotappCode,
 	})
 }
 
@@ -253,7 +246,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	// 检查 appcode 是否有效
-	if !contains(funcCode, appConfig.AppCode) {
+	if !contains(iotappCode, appConfig.AppCode) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid appcode",
 			"details": fmt.Sprintf("appcode '%s' is not supported", appConfig.AppCode),
@@ -359,7 +352,7 @@ func StartApp(c *gin.Context, rtdb *redka.DB) {
 	defer workersLock.Unlock()
 	appcode := c.Param("appcode")
 	// 检查 appcode 是否有效
-	if !contains(funcCode, appcode) {
+	if !contains(iotappCode, appcode) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid appcode",
 			"details": fmt.Sprintf("appcode '%s' is not supported", appcode),
@@ -367,7 +360,7 @@ func StartApp(c *gin.Context, rtdb *redka.DB) {
 		return
 	}
 	// 检查 funcMap 中是否存在对应的函数
-	fn, exists := funcMap[appcode]
+	fn, exists := iotappMap[appcode]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
