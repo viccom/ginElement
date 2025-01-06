@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/nalgeon/redka"
 	"math/rand"
 	"time"
 )
@@ -42,8 +43,9 @@ func printTime() {
 	fmt.Println("----------------------------------------")
 }
 
-// 周期打印时间
-func periodicPrint(id string, stopChan chan struct{}) {
+// periodicPrint函数，周期打印时间
+func periodicPrint(id string, stopChan chan struct{}, rtdb *redka.DB) {
+	_ = rtdb.Key()
 	for {
 		select {
 		case <-stopChan: // 如果收到停止信号，退出循环
@@ -57,9 +59,10 @@ func periodicPrint(id string, stopChan chan struct{}) {
 	}
 }
 
-// findmax 函数：周期性地从 10 个随机数中找到最大值并打印
-func findmax(id string, stopChan chan struct{}) {
+// findmax函数：周期性地从 10 个随机数中找到最大值并打印
+func findmax(id string, stopChan chan struct{}, rtdb *redka.DB) {
 	// 使用当前时间的纳秒级时间戳作为种子
+	_ = rtdb.Key()
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
 	for {
@@ -82,6 +85,31 @@ func findmax(id string, stopChan chan struct{}) {
 			}
 			// 打印结果
 			fmt.Printf("Worker %v: Max number is %d\n", id, m)
+			// 等待 1 秒
+			time.Sleep(1 * time.Second)
+		}
+	}
+}
+
+// simtodb函数：周期性地从 10 个随机数中找到最大值并打印
+func simtodb(id string, stopChan chan struct{}, rtdb *redka.DB) {
+	// 使用当前时间的纳秒级时间戳作为种子
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+	for {
+		select {
+		case <-stopChan: // 如果收到停止信号，退出循环
+			fmt.Printf("Worker %v stopped\n", id)
+			return
+		default:
+			// 生成 10 个随机数
+			nums := r.Intn(100)
+			_, err := rtdb.Hash().Set("test", "test", nums)
+			if err != nil {
+				return
+			}
+			// 打印结果
+			fmt.Printf("Worker %v: Random number is %d\n", id, nums)
 			// 等待 1 秒
 			time.Sleep(1 * time.Second)
 		}

@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	//stopChan   = make(chan struct{})
-	//data_queue = make(chan map[string]any, 100)
+	// stopChan   = make(chan struct{})
+	// data_queue = make(chan map[string]any, 100)
 	db *redka.DB
 )
 
@@ -51,7 +51,8 @@ type PUBData struct {
 }
 
 // handlermobus 函数：周期性地从 10 个随机数中找到最大值并打印
-func handlermobus(id string, stopChan chan struct{}) {
+func handlermobus(id string, stopChan chan struct{}, rtdb *redka.DB) {
+	_ = rtdb.Key()
 	for {
 		select {
 		case <-stopChan: // 如果收到停止信号，退出循环

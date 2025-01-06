@@ -24,7 +24,7 @@ import (
 //		}
 //	}
 
-type MyFunc func(id string, stopChan chan struct{})
+type MyFunc func(id string, stopChan chan struct{}, rtdb *redka.DB)
 
 // 全局变量
 var (
@@ -33,9 +33,10 @@ var (
 	//nextID      = 1                              // 用于生成唯一的子线程 ID
 
 	// 定义字符串数组
-	funcCode = []string{"findmax", "periodicPrint", "modbus"}
+	funcCode = []string{"findmax", "simtodb", "periodicPrint", "modbus"}
 	funcMap  = map[string]MyFunc{
 		"findmax":       findmax,
+		"simtodb":       simtodb,
 		"periodicPrint": periodicPrint,
 		"modbus":        handlermobus,
 	}
@@ -74,7 +75,7 @@ type AppConfig struct {
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/startWorker/{appcode} [post]
-func StartWorker(c *gin.Context) {
+func StartWorker(c *gin.Context, rtdb *redka.DB) {
 	workersLock.Lock()
 	defer workersLock.Unlock()
 
@@ -116,7 +117,7 @@ func StartWorker(c *gin.Context) {
 				close(stopChan) // 关闭 channel
 			}
 		}()
-		fn(uuidstr, stopChan) // 调用对应的函数
+		fn(uuidstr, stopChan, rtdb) // 调用对应的函数
 	}()
 	//fn(uuidstr, stopChan) // 调用对应的函数
 	// 将子线程的停止通道存储到全局变量中
@@ -134,18 +135,18 @@ func StartWorker(c *gin.Context) {
 // @Tags 示例
 // @Accept json
 // @Produce json
-// @Param id path string true "线程 workid"
+// @Param workerid path string true "线程 workerid"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/stopWorker/{workid} [post]
+// @Router /api/v1/stopWorker/{workerid} [post]
 func StopWorker(c *gin.Context) {
 	workersLock.Lock()
 	defer workersLock.Unlock()
 
 	// 获取子线程 ID
-	workid := c.Param("workid")
+	workerid := c.Param("workerid")
 	var workerID string
-	_, err := fmt.Sscanf(workid, "%v", &workerID)
+	_, err := fmt.Sscanf(workerid, "%v", &workerID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid ID",
@@ -349,15 +350,56 @@ func GetApp(c *gin.Context, cfgdb *redka.DB) {
 // @Tags IOTAPP Manage
 // @Accept json
 // @Produce json
+// @Param appcode path string true "功能appcode"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/startApp [post]
-func StartApp(c *gin.Context) {
-
-	// 返回数据库cfgdb中App配置信息 列表
+// @Router /api/v1/startApp/{appcode} [post]
+func StartApp(c *gin.Context, rtdb *redka.DB) {
+	workersLock.Lock()
+	defer workersLock.Unlock()
+	appcode := c.Param("appcode")
+	// 检查 appcode 是否有效
+	if !contains(funcCode, appcode) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid appcode",
+			"details": fmt.Sprintf("appcode '%s' is not supported", appcode),
+		})
+		return
+	}
+	// 检查 funcMap 中是否存在对应的函数
+	fn, exists := funcMap[appcode]
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Function not found",
+			"details": fmt.Sprintf("appcode '%s' has no associated function", appcode),
+		})
+		return
+	}
+	// 生成一个新的 UUID
+	newUUID := uuid.New()
+	uuidstr := appcode + "@" + newUUID.String()
+	// 创建停止通道
+	stopChan := make(chan struct{})
+	// 启动子线程
+	go func() {
+		defer func() {
+			// 使用 select 检查 channel 是否已关闭
+			select {
+			case <-stopChan:
+				// channel 已关闭，无需再次关闭
+			default:
+				close(stopChan) // 关闭 channel
+			}
+		}()
+		fn(uuidstr, stopChan, rtdb) // 调用对应的函数
+	}()
+	//fn(uuidstr, stopChan) // 调用对应的函数
+	// 将子线程的停止通道存储到全局变量中
+	workers[uuidstr] = stopChan
+	// 返回子线程 ID
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Workers running",
-		"ids":     "ids",
+		"message": "Worker started",
+		"id":      uuidstr,
 	})
 }
 
