@@ -5,9 +5,11 @@ go 1.23
 require github.com/gin-gonic/gin v1.10.0
 
 require (
+	github.com/BurntSushi/toml v1.4.0
 	github.com/google/uuid v1.6.0
 	github.com/nalgeon/redka v0.5.3
 	github.com/ncruces/go-sqlite3 v0.21.3
+	github.com/pkg/errors v0.9.1
 	github.com/simonvetter/modbus v1.6.3
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

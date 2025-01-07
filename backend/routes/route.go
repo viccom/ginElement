@@ -60,8 +60,14 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 	//	handlers.ListDevices(c, cfgdb)
 	//})
 
-	//数据管理
+	// 数据管理
 
 	// 日志管理
 
+	// 系统信息
+	// 查询软件的基本信息
+	r.GET("/api/v1/getSysinfo", func(c *gin.Context) {
+		// 将数据库连接传递给 handlers.GetSysInfo
+		handlers.GetSysInfo(c, cfgdb)
+	})
 }

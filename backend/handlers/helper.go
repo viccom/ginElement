@@ -1,8 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/pelletier/go-toml/v2"
+	"log"
 	"math/big"
+	"os"
+	"strings"
 )
 
 const base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -41,4 +46,67 @@ func gen16ID() string {
 		base62ID = base62ID[:16]
 	}
 	return base62ID
+}
+
+func ConvertToString(value interface{}) string {
+	switch v := value.(type) {
+	case string:
+		return v
+	case int, int64, float64, bool:
+		return fmt.Sprintf("%v", v)
+	case map[string]interface{}:
+		return convertMapToString(v)
+	case []interface{}:
+		return convertSliceToString(v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func convertMapToString(m map[string]interface{}) string {
+	result := "{"
+	for key, value := range m {
+		result += fmt.Sprintf("%s: %s, ", key, ConvertToString(value))
+	}
+	result = strings.TrimSuffix(result, ", ") + "}"
+	return result
+}
+
+func convertSliceToString(s []interface{}) string {
+	result := "["
+	for _, value := range s {
+		result += fmt.Sprintf("%s, ", ConvertToString(value))
+	}
+	result = strings.TrimSuffix(result, ", ") + "]"
+	return result
+}
+
+// ReadTOMLToMap 读取 TOML 文件并将其内容解析为 map[string]interface{}
+func ReadTOMLToMap(filePath string) (map[string]interface{}, error) {
+	// 读取 TOML 文件
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read TOML file: %w", err)
+	}
+
+	// 将 TOML 文件内容解析为 map
+	var result map[string]interface{}
+	err = toml.Unmarshal(data, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal TOML: %w", err)
+	}
+
+	return result, nil
+}
+
+func EnsureDirExists(dirName string) error {
+	if _, err := os.Stat(dirName); os.IsNotExist(err) {
+		// 使用 MkdirAll 创建多层文件夹
+		err := os.MkdirAll(dirName, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to create directory '%s': %w", dirName, err)
+		}
+		log.Printf("Directory '%s' created successfully.\n", dirName)
+	}
+	return nil
 }
