@@ -6,29 +6,69 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nalgeon/redka"
+	"log"
 	"net/http"
 )
 
-// @Summary 查询数据库cfgdb中App配置信息
+// appCode=["findmax", "periodicPrint", "modbus"]
+// appType=["toSouth", "toNorth", "System", "Others"]
+// channel=["tcp", "udp", "serial"]
+// protocol=["rtu", "tcp", "ascii", "rtuovertcp", "rtuoverudp"]
+// 定义 AppConfig 结构体
+type AppConfig struct {
+	AppCode   string `json:"appCode"`
+	AppType   string `json:"appType"`
+	InstID    string `json:"instId"`
+	InstName  string `json:"instName"`
+	AutoStart bool   `json:"autoStart"`
+	Config    any    `json:"config"`
+}
+
+// @Summary 查询所有App实例配置信息
 // @Description 这是一个查询App配置信息的接口
-// @Tags IOTAPP Manage
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/listApps [get]
 func ListApps(c *gin.Context, cfgdb *redka.DB) {
-
+	values, err := cfgdb.Hash().Items(InstListKey)
+	if err != nil {
+		log.Println("Error reading from database:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to read data from database",
+			"details": err,
+		})
+		return
+	}
+	if len(values) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "no data",
+		})
+		return
+	}
+	OutterMap := make(map[string]AppConfig)
+	for key, value := range values {
+		var newValue AppConfig
+		erra := json.Unmarshal([]byte(value.String()), &newValue)
+		if erra != nil {
+			fmt.Println("Error unmarshalling JSON:", erra)
+			return
+		}
+		//fmt.Printf("键: %s, 值: %s\n", key, newValue)
+		OutterMap[key] = newValue
+	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Workers running",
-		"ids":     "ids",
+		"message": "success to read data from database",
+		"data":    OutterMap,
 	})
 }
 
-// @Summary 查询数据库cfgdb中App配置信息
-// @Description 这是一个查询App配置信息的接口
-// @Tags IOTAPP Manage
+// @Summary 新建App实例
+// @Description 这是一个新建App实例的接口
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Param appConfig body AppConfig true "new AppConfig"
@@ -36,9 +76,6 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/newApp [post]
 func NewApp(c *gin.Context, cfgdb *redka.DB) {
-	// 使用 handler.CfgDB 和 handler.RtDB
-	//cfgdb := handler.CfgDB
-	//rtdb := handler.RtDB
 	var appConfig AppConfig
 	if err := c.ShouldBindJSON(&appConfig); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -53,8 +90,8 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 
-	// 检查 funcMap 中是否存在对应的函数
-	_, exists := funcMap[appConfig.AppCode]
+	// 检查 iotappMap 中是否存在对应的函数
+	_, exists := iotappMap[appConfig.AppCode]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
@@ -85,9 +122,9 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 查询数据库cfgdb中App配置信息
-// @Description 这是一个查询App配置信息的接口
-// @Tags IOTAPP Manage
+// @Summary 删除App实例【未实现】
+// @Description 这是一个删除App实例的接口
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
@@ -102,9 +139,9 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 查询数据库cfgdb中App配置信息
-// @Description 这是一个查询App配置信息的接口
-// @Tags IOTAPP Manage
+// @Summary 修改App实例配置【未实现】
+// @Description 这是一个修改App实例配置的接口
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Param appConfig body AppConfig true "new AppConfig"
@@ -120,9 +157,9 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 查询数据库cfgdb中App配置信息
+// @Summary 查询指定App配置信息【未实现】
 // @Description 这是一个查询App配置信息的接口
-// @Tags IOTAPP Manage
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
@@ -137,9 +174,9 @@ func GetApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 通过实例ID启动App实例
+// @Summary 通过实例ID启动App实例【未实现】
 // @Description 这是一个通过实例ID启动App实例的接口
-// @Tags IOTAPP Manage
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Param appcode path string true "功能appcode"
@@ -195,9 +232,9 @@ func StartApp(c *gin.Context, rtdb *redka.DB) {
 	})
 }
 
-// @Summary 通过实例ID停止App实例
+// @Summary 通过实例ID停止App实例【未实现】
 // @Description 这是一个通过实例ID停止App实例的接口
-// @Tags IOTAPP Manage
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
@@ -211,12 +248,3 @@ func StopApp(c *gin.Context) {
 		"ids":     "ids",
 	})
 }
-
-// @Summary 通过实例ID停止App实例
-// @Description 这是一个通过实例ID停止App实例的接口
-// @Tags IOTAPP Manage
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/stopApp [post]

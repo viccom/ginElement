@@ -19,10 +19,9 @@ var (
 	//nextID      = 1                              // 用于生成唯一的子线程 ID
 
 	// 定义redka数据库中的表名
-	SystemKey   = "system@router"
-	InstListKey = "inst@router"
-	DevAtKey    = "dev@inst"
-	DevListKey  = "dev@app"
+	SystemKey    = "system@router"
+	InstListKey  = "inst@router"
+	DevAtInstKey = "dev@inst"
 	// 定义字符串数组
 	funcCode = []string{"findmax", "simtodb", "periodicPrint", "modbus"}
 	funcMap  = map[string]testFunc{
@@ -36,19 +35,6 @@ var (
 		"modbus":  handlermobus,
 	}
 )
-
-// appCode=["findmax", "periodicPrint", "modbus"]
-// appType=["toSouth", "toBorth", "System"]
-// channel=["tcp", "udp", "serial"]
-// protocol=["rtu", "tcp", "ascii", "rtuovertcp", "rtuoverudp"]
-// 定义 AppConfig 结构体
-type AppConfig struct {
-	AppCode  string `json:"appCode"`
-	AppType  string `json:"appType"`
-	InstID   string `json:"instId"`
-	InstName string `json:"instName"`
-	Config   any    `json:"config"`
-}
 
 // @Summary 启动线程运行函数接口
 // @Description 这是一个启动线程的接口
@@ -182,7 +168,7 @@ func ListWorkers(c *gin.Context) {
 
 // @Summary 查询软件当前支持的Appcode
 // @Description 这是一个查询Appcode的接口
-// @Tags IOTAPP Manage
+// @Tags APP Manager
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
