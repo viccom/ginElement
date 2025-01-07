@@ -24,6 +24,11 @@ type AppConfig struct {
 	Config    any    `json:"config"`
 }
 
+// 定义 DevOpt 结构体
+type InstOpt struct {
+	InstId string `json:"instid"`
+}
+
 // @Summary 查询所有App实例配置信息
 // @Description 这是一个查询App配置信息的接口
 // @Tags APP Manager
@@ -131,11 +136,23 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/delApp [post]
 func DelApp(c *gin.Context, cfgdb *redka.DB) {
-
+	var instopt InstOpt
+	if err := c.ShouldBindJSON(&instopt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	_, err := cfgdb.Hash().Delete(InstListKey, instopt.InstId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to delete app instance",
+			"error":   err.Error(),
+		})
+		return
+	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Workers running",
-		"ids":     "ids",
+		"message": "App instance deleted",
+		"instid":  instopt.InstId,
 	})
 }
 
@@ -149,11 +166,48 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/modApp [post]
 func ModApp(c *gin.Context, cfgdb *redka.DB) {
+	var appConfig AppConfig
+	if err := c.ShouldBindJSON(&appConfig); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// 检查 appcode 是否有效
+	if !contains(iotappCode, appConfig.AppCode) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid appcode",
+			"details": fmt.Sprintf("appcode '%s' is not supported", appConfig.AppCode),
+		})
+		return
+	}
 
+	// 检查 iotappMap 中是否存在对应的函数
+	_, exists := iotappMap[appConfig.AppCode]
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Function not found",
+			"details": fmt.Sprintf("appcode '%s' has no associated function", appConfig.AppCode),
+		})
+		return
+	}
+
+	// 生成一个新的16位 UUID
+	uuidstr := appConfig.InstID
+
+	jsonstr, _ := json.Marshal(appConfig)
+	// 打印 anyConfig
+	//fmt.Printf("anyConfig: %+v\n", jsonstr)
+	_, err := cfgdb.Hash().Set(InstListKey, uuidstr, jsonstr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "New App Creat Fail",
+			"details": fmt.Sprintf("err: '%v' ", err),
+		})
+		return
+	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Workers running",
-		"ids":     "ids",
+		"message":   "New App Creat OK",
+		"appConfig": appConfig,
 	})
 }
 
@@ -166,11 +220,26 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/getApp [get]
 func GetApp(c *gin.Context, cfgdb *redka.DB) {
-
+	var instopt InstOpt
+	if err := c.ShouldBindJSON(&instopt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	value, err := cfgdb.Hash().Get(InstListKey, instopt.InstId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to delete app instance",
+			"error":   err.Error(),
+		})
+		return
+	}
+	valueStr := value.String()
+	var newValue AppConfig
+	err = json.Unmarshal([]byte(valueStr), &newValue)
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Workers running",
-		"ids":     "ids",
+		"message": "App instance deleted",
+		"instid":  value.String(),
 	})
 }
 
