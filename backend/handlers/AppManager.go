@@ -118,7 +118,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 	}
 
 	// 检查 iotappMap 中是否存在对应的函数
-	_, exists := iotappMap[appConfig.AppCode]
+	_, exists := IotappMap[appConfig.AppCode]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
@@ -203,7 +203,7 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	}
 
 	// 检查 iotappMap 中是否存在对应的函数
-	_, exists := iotappMap[appConfig.AppCode]
+	_, exists := IotappMap[appConfig.AppCode]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
@@ -288,7 +288,7 @@ func StartApp(c *gin.Context, rtdb *redka.DB) {
 		return
 	}
 	// 检查 funcMap 中是否存在对应的函数
-	fn, exists := iotappMap[appcode]
+	fn, exists := IotappMap[appcode]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
