@@ -45,7 +45,7 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	//
-	fmt.Println("body:", instinfo.InstId)
+	//fmt.Println("body:", instinfo.InstId)
 	instid := instinfo.InstId
 	values, err3 := cfgdb.Hash().Items(DevAtInstKey)
 	if err3 != nil {
@@ -146,7 +146,7 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 向设备增加点表信息【未实现】
+// @Summary 向设备增加点表信息
 // @Description 这是一个向设备增加点表信息的接口
 // @Tags DEV Manager
 // @Accept json
@@ -154,21 +154,47 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 // @Param devTags body DevTags true "new DevTags"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/newdevtags [post]
+// @Router /api/v1/newDevtags [post]
 func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
-	var devOpt DevOpt
-	if err := c.ShouldBindJSON(&devOpt); err != nil {
+	var devTags DevTags
+	if err := c.ShouldBindJSON(&devTags); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	//for key, value := range devTags.TagsMap {
+	//	fmt.Printf("键: %s, 值: %s\n", key, value)
+	//}
+	// 转换后的 map
+	tagsMap := make(map[string]any)
+
+	// 遍历原始 map
+	for key, values := range devTags.TagsMap {
+		jsonData, err := json.Marshal(values)
+		if err != nil {
+			fmt.Println("Error marshalling to JSON:", err)
+			continue
+		}
+		tagsMap[key] = string(jsonData) // 将切片转为 JSON 字符串
+	}
+	_, err := cfgdb.Hash().SetMany(devTags.DevID, tagsMap)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "New Dev Creat Fail",
+			"details": fmt.Sprintf("err: '%v' ", err),
+		})
 		return
 	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Del Dev OK",
-		"devlist": devOpt,
+		"message": "add devTags OK",
+		"devid":   devTags.DevID,
+		"instid":  devTags.InstID,
+		"devTags": tagsMap,
 	})
 }
 
-// @Summary 查询设备点表信息【未实现】
+// @Summary 查询设备点表信息
 // @Description 这是一个查询设备点表信息的接口
 // @Tags DEV Manager
 // @Accept json
@@ -176,16 +202,49 @@ func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
 // @Param devlist body DevOpt true "del DevList"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/getdevtags [post]
+// @Router /api/v1/getDevtags [post]
 func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 	var devOpt DevOpt
 	if err := c.ShouldBindJSON(&devOpt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// 使用 for 循环遍历数组
+	newtags := make(map[string]any)
+	for i := 0; i < len(devOpt.DevList); i++ {
+		//fmt.Printf("Index: %d, Value: %d\n", i, numbers[i])
+		devid := devOpt.DevList[i]
+		values, err3 := cfgdb.Hash().Items(devid)
+		if err3 != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "Get DevList Fail",
+				"details": fmt.Sprintf("err: '%v' ", err3),
+			})
+		}
+		if len(values) != 0 {
+			newtag := make(map[string][]string)
+			for key, value := range values {
+				var newValue []string
+				erra := json.Unmarshal([]byte(value.String()), &newValue)
+				if erra != nil {
+					fmt.Println("Error unmarshalling JSON:", erra)
+					return
+				}
+				newtag[key] = newValue
+			}
+			newtags[devid] = newtag
+		}
+	}
+	if len(newtags) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "no data, or devid is not exist",
+		})
+		return
+	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Del Dev OK",
-		"devlist": devOpt,
+		"message": "Get data  OK",
+		"devlist": devOpt.DevList,
+		"data":    newtags,
 	})
 }

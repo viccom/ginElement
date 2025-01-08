@@ -88,12 +88,12 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 	})
 	// 数据管理
 	// 读取设备实时数据
-	r.POST("/api/v1/getDevValues", func(c *gin.Context) {
+	r.POST("/api/v1/getDevvalues", func(c *gin.Context) {
 		// 将数据库连接传递给 handlers.GetDevValues
 		handlers.GetDevValues(c, rtdb)
 	})
 	// 读取设备点实时数据
-	r.POST("/api/v1/getTagValues", func(c *gin.Context) {
+	r.POST("/api/v1/getTagvalues", func(c *gin.Context) {
 		// 将数据库连接传递给 handlers.GetTagValues
 		handlers.GetTagValues(c, rtdb)
 	})

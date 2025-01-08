@@ -5,6 +5,7 @@ import (
 	"github.com/nalgeon/redka"
 	"log"
 	"net/http"
+	"runtime"
 )
 
 const AppVersion = "250108"
@@ -27,6 +28,10 @@ func GetSysInfo(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	OutterMap := make(map[string]string)
+	os := runtime.GOOS
+	arch := runtime.GOARCH
+	OutterMap["os"] = os
+	OutterMap["arch"] = arch
 	for key, value := range values {
 		OutterMap[key] = value.String()
 	}

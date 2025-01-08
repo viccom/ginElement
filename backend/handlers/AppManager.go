@@ -29,12 +29,17 @@ type InstInfo struct {
 	InstId string `json:"instid"`
 }
 
+// 定义 InstInfo 结构体
+type AppInfo struct {
+	AppCode string `json:"appcode"`
+}
+
 // @Summary 查询指定App的默认配置【未实现】
 // @Description 这是一个查询App默认配置信息的接口
 // @Tags APP Manager
 // @Accept json
 // @Produce json
-// @Param instid body InstInfo true "InstId"
+// @Param appcode body AppInfo true "AppCode"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/getAppDefault [post]

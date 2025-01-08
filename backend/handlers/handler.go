@@ -19,7 +19,6 @@ var (
 	//nextID      = 1                              // 用于生成唯一的子线程 ID
 
 	// 定义redka数据库中的表名
-	SystemKey    = "system@router"
 	InstListKey  = "inst@router"
 	DevAtInstKey = "dev@inst"
 	// 定义字符串数组

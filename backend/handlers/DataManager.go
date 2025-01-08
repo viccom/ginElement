@@ -19,7 +19,7 @@ type DevInfo struct {
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/getRtvalues [get]
+// @Router /api/v1/getDevvalues [get]
 func GetDevValues(c *gin.Context, rtdb *redka.DB) {
 	devid := c.Param("devid")
 	values, err := rtdb.Hash().Items(devid)
@@ -48,7 +48,7 @@ func GetDevValues(c *gin.Context, rtdb *redka.DB) {
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/getRtvalues [get]
+// @Router /api/v1/getTagvalues [get]
 func GetTagValues(c *gin.Context, rtdb *redka.DB) {
 	devid := c.Param("devid")
 	values, err := rtdb.Hash().Items(devid)
