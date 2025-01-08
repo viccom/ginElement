@@ -24,8 +24,8 @@ type AppConfig struct {
 	Config    any    `json:"config"`
 }
 
-// 定义 DevOpt 结构体
-type InstOpt struct {
+// 定义 InstInfo 结构体
+type InstInfo struct {
 	InstId string `json:"instid"`
 }
 
@@ -136,7 +136,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/delApp [post]
 func DelApp(c *gin.Context, cfgdb *redka.DB) {
-	var instopt InstOpt
+	var instopt InstInfo
 	if err := c.ShouldBindJSON(&instopt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -211,16 +211,17 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 查询指定App配置信息【未实现】
+// @Summary 查询指定App配置信息
 // @Description 这是一个查询App配置信息的接口
 // @Tags APP Manager
 // @Accept json
 // @Produce json
+// @Param instid body InstInfo true "InstId"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/getApp [get]
+// @Router /api/v1/getApp [post]
 func GetApp(c *gin.Context, cfgdb *redka.DB) {
-	var instopt InstOpt
+	var instopt InstInfo
 	if err := c.ShouldBindJSON(&instopt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -228,7 +229,7 @@ func GetApp(c *gin.Context, cfgdb *redka.DB) {
 	value, err := cfgdb.Hash().Get(InstListKey, instopt.InstId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to delete app instance",
+			"message": "Failed to get app data",
 			"error":   err.Error(),
 		})
 		return
@@ -238,8 +239,8 @@ func GetApp(c *gin.Context, cfgdb *redka.DB) {
 	err = json.Unmarshal([]byte(valueStr), &newValue)
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "App instance deleted",
-		"instid":  value.String(),
+		"message": "get app data ok",
+		"data":    newValue,
 	})
 }
 

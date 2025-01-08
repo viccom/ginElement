@@ -35,21 +35,10 @@ func main() {
 	}
 	defer rtdb.Close()
 
-	// 加载配置文件
-	result, err := handlers.ReadTOMLToMap("system.toml")
-	if err != nil {
-		log.Printf("Error: %v", err)
-	} else {
-		// 打印解析后的 map
-		for key, value := range result {
-			strValue := handlers.ConvertToString(value)
-			fmt.Printf("%s: %v\n", key, strValue)
-			_, err2 := cfgdb.Hash().Set("system@router", key, strValue)
-			if err2 != nil {
-				log.Println("write config.db err:", err2)
-				return
-			}
-		}
+	_, err2 := cfgdb.Hash().Set("system@router", "version", handlers.AppVersion)
+	if err2 != nil {
+		log.Println("write config.db err:", err2)
+		return
 	}
 
 	// 创建 Gin 引擎

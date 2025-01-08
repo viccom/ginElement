@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const AppVersion = "250108"
+
 // @Summary 查询软件的基本信息
 // @Description 这是一个查询软件基本信息的接口
 // @Tags SYSTEM
