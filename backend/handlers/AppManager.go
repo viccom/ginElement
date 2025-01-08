@@ -29,6 +29,23 @@ type InstInfo struct {
 	InstId string `json:"instid"`
 }
 
+// @Summary 查询指定App的默认配置【未实现】
+// @Description 这是一个查询App默认配置信息的接口
+// @Tags APP Manager
+// @Accept json
+// @Produce json
+// @Param instid body InstInfo true "InstId"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /api/v1/getAppDefault [post]
+func GetAppDefault(c *gin.Context) {
+	// 返回数据库cfgdb中App配置信息 列表
+	c.JSON(http.StatusOK, gin.H{
+		"message": "get app data ok",
+		"data":    "newValue",
+	})
+}
+
 // @Summary 查询所有App实例配置信息
 // @Description 这是一个查询App配置信息的接口
 // @Tags APP Manager

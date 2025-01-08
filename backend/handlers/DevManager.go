@@ -124,7 +124,7 @@ func NewDev(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 删除设备配置信息
+// @Summary 删除设备配置信息【未实现】
 // @Description 这是一个删除设备配置信息的接口
 // @Tags DEV Manager
 // @Accept json
@@ -146,7 +146,7 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 向设备增加点表信息
+// @Summary 向设备增加点表信息【未实现】
 // @Description 这是一个向设备增加点表信息的接口
 // @Tags DEV Manager
 // @Accept json
@@ -156,6 +156,28 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/newdevtags [post]
 func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
+	var devOpt DevOpt
+	if err := c.ShouldBindJSON(&devOpt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// 返回数据库cfgdb中App配置信息 列表
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Del Dev OK",
+		"devlist": devOpt,
+	})
+}
+
+// @Summary 查询设备点表信息【未实现】
+// @Description 这是一个查询设备点表信息的接口
+// @Tags DEV Manager
+// @Accept json
+// @Produce json
+// @Param devlist body DevOpt true "del DevList"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /api/v1/getdevtags [post]
+func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 	var devOpt DevOpt
 	if err := c.ShouldBindJSON(&devOpt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

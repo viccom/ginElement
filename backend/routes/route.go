@@ -25,6 +25,11 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 		// 将数据库连接传递给 handlers.ListApps
 		handlers.ListApps(c, cfgdb)
 	})
+	// 查询指定App的默认配置
+	r.POST("/api/v1/getAppDefault", func(c *gin.Context) {
+		// 将数据库连接传递给 handlers.GetAppDefault
+		handlers.GetAppDefault(c)
+	})
 	// 查询指定App实例的信息
 	r.POST("/api/v1/getApp", func(c *gin.Context) {
 		// 将数据库连接传递给 handlers.GetApp
@@ -76,7 +81,11 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 		// 将数据库连接传递给 handlers.NewDevTags
 		handlers.NewDevTags(c, cfgdb)
 	})
-
+	// 查询设备点表
+	r.POST("/api/v1/getDevtags", func(c *gin.Context) {
+		// 将数据库连接传递给 handlers.NewDevTags
+		handlers.GetDevTags(c, cfgdb)
+	})
 	// 数据管理
 	// 读取设备实时数据
 	r.POST("/api/v1/getDevValues", func(c *gin.Context) {
