@@ -51,7 +51,7 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 	})
 	// 启动App实例
 	r.POST("/api/v1/startApp/:appcode", func(c *gin.Context) {
-		handlers.StartApp(c, rtdb)
+		handlers.StartApp(c, cfgdb, rtdb)
 	})
 	// 停止App实例
 	r.POST("/api/v1/stopApp", func(c *gin.Context) {

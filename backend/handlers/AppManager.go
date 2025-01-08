@@ -275,7 +275,7 @@ func GetApp(c *gin.Context, cfgdb *redka.DB) {
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/startApp/{appcode} [post]
-func StartApp(c *gin.Context, rtdb *redka.DB) {
+func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 	workersLock.Lock()
 	defer workersLock.Unlock()
 	appcode := c.Param("appcode")
@@ -312,7 +312,7 @@ func StartApp(c *gin.Context, rtdb *redka.DB) {
 				close(stopChan) // 关闭 channel
 			}
 		}()
-		fn(uuidstr, stopChan, rtdb) // 调用对应的函数
+		fn(uuidstr, stopChan, cfgdb, rtdb) // 调用对应的函数
 	}()
 	//fn(uuidstr, stopChan) // 调用对应的函数
 	// 将子线程的停止通道存储到全局变量中

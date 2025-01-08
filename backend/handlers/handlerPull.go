@@ -51,7 +51,7 @@ type PUBData struct {
 }
 
 // handlermobus 函数：周期性地从 10 个随机数中找到最大值并打印
-func handlermobus(id string, stopChan chan struct{}, rtdb *redka.DB) {
+func handlermobus(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB) {
 	_ = rtdb.Key()
 	for {
 		select {

@@ -60,7 +60,7 @@ func main() {
 	// 提供 Swagger UI 静态文件
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 启动一个子线程运行 periodicPrint 函数
-	//startWorker(handlers.IotappMap["simtodb"], rtdb, "simtodb")
+	startWorker(handlers.IotappMap["simtodb"], cfgdb, rtdb, "simtodb")
 	// 启动服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")
@@ -69,7 +69,7 @@ func main() {
 	}
 }
 
-func startWorker(workerFunc func(string, chan struct{}, *redka.DB), rtdb *redka.DB, workerName string) {
+func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), cfgdb *redka.DB, rtdb *redka.DB, workerName string) {
 	workersLock := &sync.Mutex{}
 	workersLock.Lock()
 	defer workersLock.Unlock()
@@ -84,7 +84,7 @@ func startWorker(workerFunc func(string, chan struct{}, *redka.DB), rtdb *redka.
 				close(stopChan)
 			}
 		}()
-		workerFunc(uuidstr, stopChan, rtdb)
+		workerFunc(uuidstr, stopChan, cfgdb, rtdb)
 	}()
 
 	handlers.Workers[uuidstr] = stopChan

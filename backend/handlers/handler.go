@@ -10,7 +10,7 @@ import (
 )
 
 type testFunc func(id string, stopChan chan struct{})
-type iotFunc func(id string, stopChan chan struct{}, rtdb *redka.DB)
+type iotFunc func(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB)
 
 // 全局变量
 var (
