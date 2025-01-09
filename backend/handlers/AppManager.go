@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/nalgeon/redka"
 	"log"
 	"net/http"
+	"time"
 )
 
 // appCode=["findmax", "periodicPrint", "modbus"]
@@ -29,7 +29,7 @@ type InstInfo struct {
 	InstId string `json:"instid"`
 }
 
-// 定义 InstInfo 结构体
+// 定义 AppInfo 结构体
 type AppInfo struct {
 	AppCode string `json:"appcode"`
 }
@@ -154,6 +154,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 // @Tags APP Manager
 // @Accept json
 // @Produce json
+// @Param instid body InstInfo true "InstId"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/delApp [post]
@@ -162,6 +163,17 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 	if err := c.ShouldBindJSON(&instopt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	workersLock.Lock()
+	defer workersLock.Unlock()
+	instid := instopt.InstId
+	// 查找子线程的停止通道
+	stopChan, exists := Workers[instid]
+	if exists {
+		// 发送停止信号
+		close(stopChan)
+		// 从全局变量中移除子线程
+		delete(Workers, instid)
 	}
 	_, err := cfgdb.Hash().Delete(InstListKey, instopt.InstId)
 	if err != nil {
@@ -174,11 +186,11 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "App instance deleted",
-		"instid":  instopt.InstId,
+		"data":    instopt,
 	})
 }
 
-// @Summary 修改App实例配置【未实现】
+// @Summary 修改App实例配置
 // @Description 这是一个修改App实例配置的接口
 // @Tags APP Manager
 // @Accept json
@@ -214,7 +226,6 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 
 	// 生成一个新的16位 UUID
 	uuidstr := appConfig.InstID
-
 	jsonstr, _ := json.Marshal(appConfig)
 	// 打印 anyConfig
 	//fmt.Printf("anyConfig: %+v\n", jsonstr)
@@ -228,8 +239,8 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "New App Creat OK",
-		"appConfig": appConfig,
+		"message": "New App Mod OK",
+		"data":    appConfig,
 	})
 }
 
@@ -266,27 +277,27 @@ func GetApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 通过实例ID启动App实例【未实现】
+// @Summary 通过实例ID启动App实例
 // @Description 这是一个通过实例ID启动App实例的接口
 // @Tags APP Manager
 // @Accept json
 // @Produce json
-// @Param appcode path string true "功能appcode"
+// @Param instid body InstInfo true "InstId"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/startApp/{appcode} [post]
+// @Router /api/v1/startApp [post]
 func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
-	workersLock.Lock()
-	defer workersLock.Unlock()
-	appcode := c.Param("appcode")
-	// 检查 appcode 是否有效
-	if !contains(iotappCode, appcode) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid appcode",
-			"details": fmt.Sprintf("appcode '%s' is not supported", appcode),
-		})
+	var instopt InstInfo
+	if err := c.ShouldBindJSON(&instopt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	workersLock.Lock()
+	defer workersLock.Unlock()
+	instid := instopt.InstId
+	appcode, _ := extractChar(instid)
+	now := time.Now()
+	formattedDate := now.Format("2006-01-02 15:04:05")
 	// 检查 funcMap 中是否存在对应的函数
 	fn, exists := IotappMap[appcode]
 	if !exists {
@@ -296,10 +307,8 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 		})
 		return
 	}
-	// 生成一个新的 UUID
-	newUUID := uuid.New()
-	uuidstr := appcode + "@" + newUUID.String()
 	// 创建停止通道
+
 	stopChan := make(chan struct{})
 	// 启动子线程
 	go func() {
@@ -312,31 +321,59 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 				close(stopChan) // 关闭 channel
 			}
 		}()
-		fn(uuidstr, stopChan, cfgdb, rtdb) // 调用对应的函数
+		fn(instid, stopChan, cfgdb, rtdb) // 调用对应的函数
 	}()
-	//fn(uuidstr, stopChan) // 调用对应的函数
 	// 将子线程的停止通道存储到全局变量中
-	Workers[uuidstr] = stopChan
+	Workers[instid] = stopChan
 	// 返回子线程 ID
+	fmt.Printf("%v Worker %v started\n", formattedDate, instid)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Worker started",
-		"id":      uuidstr,
+		"data":    instopt,
 	})
 }
 
-// @Summary 通过实例ID停止App实例【未实现】
+// @Summary 通过实例ID停止App实例
 // @Description 这是一个通过实例ID停止App实例的接口
 // @Tags APP Manager
 // @Accept json
 // @Produce json
+// @Param instid body InstInfo true "InstId"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/stopApp [post]
 func StopApp(c *gin.Context) {
-
-	// 返回数据库cfgdb中App配置信息 列表
+	var instopt InstInfo
+	if err := c.ShouldBindJSON(&instopt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	workersLock.Lock()
+	defer workersLock.Unlock()
+	instid := instopt.InstId
+	//var workerID string
+	//_, err := fmt.Sscanf(instid, "%v", &workerID)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, gin.H{
+	//		"message": "Invalid ID",
+	//	})
+	//	return
+	//}
+	// 查找子线程的停止通道
+	stopChan, exists := Workers[instid]
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Worker not found",
+		})
+		return
+	}
+	// 发送停止信号
+	close(stopChan)
+	// 从全局变量中移除子线程
+	delete(Workers, instid)
+	// 返回成功消息
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Workers running",
-		"ids":     "ids",
+		"message": "Worker stopped",
+		"data":    instopt,
 	})
 }

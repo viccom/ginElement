@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/pelletier/go-toml/v2"
 	"log"
 	"math/big"
 	"math/rand"
@@ -24,6 +23,15 @@ func pickRandomElement[T any](slice []T) T {
 	}
 	randomIndex := rand.Intn(len(slice))
 	return slice[randomIndex]
+}
+
+// 截取 @ 符号前的部分
+func extractChar(email string) (string, error) {
+	atIndex := strings.Index(email, "@")
+	if atIndex == -1 {
+		return "", fmt.Errorf("字符串中没有 @ 符号")
+	}
+	return email[:atIndex], nil
 }
 
 // 将大整数转换为 Base62 编码
@@ -96,22 +104,22 @@ func convertSliceToString(s []interface{}) string {
 }
 
 // ReadTOMLToMap 读取 TOML 文件并将其内容解析为 map[string]interface{}
-func ReadTOMLToMap(filePath string) (map[string]interface{}, error) {
-	// 读取 TOML 文件
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read TOML file: %w", err)
-	}
-
-	// 将 TOML 文件内容解析为 map
-	var result map[string]interface{}
-	err = toml.Unmarshal(data, &result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal TOML: %w", err)
-	}
-
-	return result, nil
-}
+//func ReadTOMLToMap(filePath string) (map[string]interface{}, error) {
+//	// 读取 TOML 文件
+//	data, err := os.ReadFile(filePath)
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to read TOML file: %w", err)
+//	}
+//
+//	// 将 TOML 文件内容解析为 map
+//	var result map[string]interface{}
+//	err = toml.Unmarshal(data, &result)
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to unmarshal TOML: %w", err)
+//	}
+//
+//	return result, nil
+//}
 
 func EnsureDirExists(dirName string) error {
 	if _, err := os.Stat(dirName); os.IsNotExist(err) {

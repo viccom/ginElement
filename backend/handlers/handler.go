@@ -157,11 +157,16 @@ func ListWorkers(c *gin.Context) {
 	for id := range Workers {
 		ids = append(ids, id)
 	}
-
+	if len(ids) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "No workers running",
+		})
+		return
+	}
 	// 返回子线程 ID 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Workers running",
-		"ids":     ids,
+		"data":    ids,
 	})
 }
 
