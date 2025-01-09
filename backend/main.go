@@ -6,7 +6,6 @@ import (
 	"ginElement/handlers"
 	"ginElement/routes"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/nalgeon/redka"
 
 	swaggerFiles "github.com/swaggo/files"     // 用于提供 Swagger UI 静态文件
@@ -36,12 +35,12 @@ func main() {
 	//	},
 	//}
 
-	//rtdb, err := redka.Open("data/rt.db", &opts)
+	rtdb, err := redka.Open("data/rt.db", nil)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file:/rt.db?vfs=memdb", nil)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file::memory:?cache=shared", nil)
-	rtdb, err := redka.Open("file:redka?mode=memory&cache=shared", nil)
+	//rtdb, err := redka.Open("file:redka?mode=memory&cache=shared", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,7 +61,7 @@ func main() {
 	// 提供 Swagger UI 静态文件
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 启动一个子线程运行 periodicPrint 函数
-	startWorker(handlers.IotappMap["simulator"], cfgdb, rtdb, "simulator")
+	startWorker(handlers.IotappMap["simulator"], cfgdb, rtdb, "simulator@463tOZn138pdXqyz")
 	// 启动服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")
@@ -75,8 +74,8 @@ func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), c
 	workersLock := &sync.Mutex{}
 	workersLock.Lock()
 	defer workersLock.Unlock()
-	newUUID := uuid.New()
-	uuidstr := workerName + "@" + newUUID.String()
+	//newUUID := uuid.New()
+	//uuidstr := workerName + "@" + newUUID.String()
 	stopChan := make(chan struct{})
 	go func() {
 		defer func() {
@@ -86,8 +85,8 @@ func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), c
 				close(stopChan)
 			}
 		}()
-		workerFunc(uuidstr, stopChan, cfgdb, rtdb)
+		workerFunc(workerName, stopChan, cfgdb, rtdb)
 	}()
 
-	handlers.Workers[uuidstr] = stopChan
+	handlers.Workers[workerName] = stopChan
 }

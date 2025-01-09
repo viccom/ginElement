@@ -113,7 +113,7 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 			fmt.Println("Error unmarshalling JSON:", erra)
 			return
 		}
-		fmt.Printf("键: %s, 值: %s\n", key, newValue.InstID)
+		//fmt.Printf("键: %s, 值: %s\n", key, newValue.InstID)
 		if id == newValue.InstID {
 			OutterMap[key] = newValue
 		}
@@ -129,7 +129,6 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 			return
 		default:
 			for devkey := range OutterMap {
-				fmt.Printf("键: %s, 值: %s\n", devkey)
 				// 从设备点表中获取配置信息
 				tags, err2 := cfgdb.Hash().Items(devkey)
 				if err2 != nil {
@@ -137,7 +136,11 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					continue
 				}
 				if len(tags) != 0 {
-					// 遍历设备点表
+					datasmap := make(map[string]any)
+					now := time.Now()
+					formattedDate := now.Format("2006-01-02 15:04:05")
+					unixMilliTimestamp := now.UnixMilli()
+					// 遍历设备点表获取数据
 					for tagkey, tagvalue := range tags {
 						var newValue []string
 						erra := json.Unmarshal([]byte(tagvalue.String()), &newValue)
@@ -149,22 +152,30 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 						var value interface{}
 						if newValue[2] == "int" {
 							value = r.Intn(100)
-							rtdb.Hash().Set(devkey, tagkey, value)
 						}
 						if newValue[2] == "float" {
 							value = r.Float32() * 100
-							rtdb.Hash().Set(devkey, tagkey, value)
 						}
 						if newValue[2] == "bool" {
 							value = pickRandomElement(boolArr)
-							rtdb.Hash().Set(devkey, tagkey, value)
 						}
 						if newValue[2] == "string" {
 							value = pickRandomElement(stringArr)
-							rtdb.Hash().Set(devkey, tagkey, value)
 						}
-						fmt.Printf("标签: %s, 数值: %v\n", tagkey, value)
+
+						valueMap := []any{formattedDate, value, unixMilliTimestamp}
+						valueMapJson, _ := json.Marshal(valueMap)
+						datasmap[tagkey] = valueMapJson
+
 					}
+					//fmt.Printf("设备： %s, 标签: %s, 数值三元组: %v\n", devkey, tagkey, valueMap)
+					//	统一将数据写入到redka数据库
+					_, err := rtdb.Hash().SetMany(devkey, datasmap)
+					if err != nil {
+						fmt.Printf("Err: %v\n", err)
+						return
+					}
+
 				}
 
 			}
