@@ -2,16 +2,17 @@ package handlers
 
 var (
 	app_default = map[string]map[string]any{
-		"modbus": {"appcode": "modbus",
-			"appType":   "modbus",
-			"instid":    "",
+		"modbus": {"appCode": "modbus",
+			"appType":   "toSouth",
+			"instId":    "",
 			"instName":  "modbus app",
 			"autoStart": false,
 			"config":    "{}",
 		},
 		"simulator": {
-			"appcode":   "simulator",
-			"instid":    "",
+			"appCode":   "simulator",
+			"appType":   "toSouth",
+			"instId":    "",
 			"instName":  "simulator app",
 			"autoStart": false,
 			"config":    "{}",
@@ -31,7 +32,7 @@ var (
 		},
 		"simulator": {
 			"devId":  "DEV_7JF3ZMbgvQfvAYpo",
-			"instid": "simulator@463tOZn138pdXqyz",
+			"instid": "simulator@888tOZn138pdXqyz",
 			"tagsMap": map[string]any{
 				"bool1":    []any{"bool1", "布尔量1", "bool"},
 				"analog1":  []any{"analog1", "模拟量1", "float"},

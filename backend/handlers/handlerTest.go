@@ -102,7 +102,7 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		return
 	}
 	if len(values) == 0 {
-		fmt.Printf("no device\n")
+		fmt.Printf("database no any device\n")
 		return
 	}
 	OutterMap := make(map[string]DevConfig)
@@ -119,7 +119,7 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		}
 	}
 	if len(OutterMap) == 0 {
-		fmt.Printf("no device\n")
+		fmt.Printf("instid %v no match device\n", id)
 		return
 	}
 	for {
