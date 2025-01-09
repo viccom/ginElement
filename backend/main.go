@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	_ "ginElement/docs"
 	"ginElement/handlers"
@@ -61,7 +62,23 @@ func main() {
 	// 提供 Swagger UI 静态文件
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 启动一个子线程运行 periodicPrint 函数
-	startWorker(handlers.IotappMap["simulator"], cfgdb, rtdb, "simulator@463tOZn138pdXqyz")
+	items, err := cfgdb.Hash().Items(handlers.InstListKey)
+	if err != nil {
+		return
+	}
+	for key, item := range items {
+		var appconfig handlers.AppConfig
+		erra := json.Unmarshal([]byte(item.String()), &appconfig)
+		if erra != nil {
+			fmt.Println("Error unmarshalling JSON:", erra)
+			return
+		}
+		fmt.Printf("键: %s, 值: %v\n", key, appconfig.InstID)
+		if appconfig.AutoStart == true {
+			startWorker(handlers.IotappMap[appconfig.InstID], cfgdb, rtdb, appconfig.InstID)
+		}
+	}
+
 	// 启动服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")

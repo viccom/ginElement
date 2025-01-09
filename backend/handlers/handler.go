@@ -40,7 +40,7 @@ var (
 // @Tags 示例
 // @Accept json
 // @Produce json
-// @Param appcode path string true "功能appcode"
+// @Param appCode path string true "功能appcode"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/startWorker/{appcode} [post]
@@ -48,12 +48,12 @@ func StartWorker(c *gin.Context) {
 	workersLock.Lock()
 	defer workersLock.Unlock()
 
-	appcode := c.Param("appcode")
+	appcode := c.Param("appCode")
 	// 检查 appcode 是否有效
 	if !contains(funcCode, appcode) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid appcode",
-			"details": fmt.Sprintf("appcode '%s' is not supported", appcode),
+			"message": "Invalid appCode",
+			"details": fmt.Sprintf("appCode '%s' is not supported", appcode),
 		})
 		return
 	}
@@ -63,7 +63,7 @@ func StartWorker(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
-			"details": fmt.Sprintf("appcode '%s' has no associated function", appcode),
+			"details": fmt.Sprintf("appCode '%s' has no associated function", appcode),
 		})
 		return
 	}
@@ -181,7 +181,7 @@ func ListWorkers(c *gin.Context) {
 func ListAppcode(c *gin.Context) {
 	// 返回 funcCode	列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "appcode",
-		"appcode": iotappCode,
+		"message": "appCode",
+		"appCode": iotappCode,
 	})
 }

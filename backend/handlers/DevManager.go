@@ -13,7 +13,7 @@ type DevConfig struct {
 	DevID   string `json:"devId"`
 	DevName string `json:"devName"`
 	DevDesc string `json:"devDesc"`
-	InstID  string `json:"instid"`
+	InstID  string `json:"instId"`
 	Config  any    `json:"config"`
 }
 

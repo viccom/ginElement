@@ -31,7 +31,7 @@ type InstInfo struct {
 
 // 定义 AppInfo 结构体
 type AppInfo struct {
-	AppCode string `json:"appcode"`
+	AppCode string `json:"appCode"`
 }
 
 // @Summary 查询指定App的默认配置【未实现】
@@ -39,7 +39,7 @@ type AppInfo struct {
 // @Tags APP Manager
 // @Accept json
 // @Produce json
-// @Param appcode body AppInfo true "AppCode"
+// @Param appCode body AppInfo true "AppCode"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/getAppDefault [post]
@@ -49,18 +49,19 @@ func GetAppDefault(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	//fmt.Printf("%+v\n", appinfo.AppCode)
 	appcode := appinfo.AppCode
 	var newValue = make(map[string]any)
-	newValue["app_config"] = app_default[appcode]
-	newValue["tags_default"] = tags_default[appcode]
-	if isEmptyMap(newValue["app_config"]) || isNil(newValue["app_config"]) {
+	newValue["appConfig"] = app_default[appcode]
+	newValue["devTags"] = tags_default[appcode]
+	if isEmptyMap(newValue["appConfig"]) || isNil(newValue["devTags"]) {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "appcode is not exist",
+			"message": "appCode is not exist",
 		})
 		return
 	}
 
-	fmt.Printf("newValue: %v\n", newValue["app_config"])
+	fmt.Printf("newValue: %v\n", newValue["appConfig"])
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "get app_default ok",
@@ -116,7 +117,7 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 // @Tags APP Manager
 // @Accept json
 // @Produce json
-// @Param appConfig body AppConfig true "new AppConfig"
+// @Param appConfig body AppConfig true "AppConfig"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/newApp [post]
@@ -126,11 +127,12 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// 检查 appcode 是否有效
+	// 检查 appCode 是否有效
+	fmt.Printf("%+v,appConfig: %+v\n", iotappCode, appConfig)
 	if !contains(iotappCode, appConfig.AppCode) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid appcode",
-			"details": fmt.Sprintf("appcode '%s' is not supported", appConfig.AppCode),
+			"message": "Invalid appCode",
+			"details": fmt.Sprintf("appCode '%s' is not supported", appConfig.AppCode),
 		})
 		return
 	}
@@ -140,7 +142,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
-			"details": fmt.Sprintf("appcode '%s' has no associated function", appConfig.AppCode),
+			"details": fmt.Sprintf("appCode '%s' has no associated function", appConfig.AppCode),
 		})
 		return
 	}
@@ -226,8 +228,8 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	// 检查 appcode 是否有效
 	if !contains(iotappCode, appConfig.AppCode) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid appcode",
-			"details": fmt.Sprintf("appcode '%s' is not supported", appConfig.AppCode),
+			"message": "Invalid appCode",
+			"details": fmt.Sprintf("appCode '%s' is not supported", appConfig.AppCode),
 		})
 		return
 	}
@@ -237,7 +239,7 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
-			"details": fmt.Sprintf("appcode '%s' has no associated function", appConfig.AppCode),
+			"details": fmt.Sprintf("appCode '%s' has no associated function", appConfig.AppCode),
 		})
 		return
 	}
@@ -321,7 +323,7 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Function not found",
-			"details": fmt.Sprintf("appcode '%s' has no associated function", appcode),
+			"details": fmt.Sprintf("appCode '%s' has no associated function", appcode),
 		})
 		return
 	}
