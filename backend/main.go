@@ -88,6 +88,10 @@ func main() {
 }
 
 func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), cfgdb *redka.DB, rtdb *redka.DB, workerName string) {
+	if workerFunc == nil {
+		log.Printf("Error: workerFunc is nil for worker %s", workerName)
+		return
+	}
 	workersLock := &sync.Mutex{}
 	workersLock.Lock()
 	defer workersLock.Unlock()
