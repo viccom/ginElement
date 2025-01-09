@@ -6,11 +6,25 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"log"
 	"math/big"
+	"math/rand"
 	"os"
 	"strings"
 )
 
 const base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+var stringArr = []string{"apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew", "kiwi", "lemon"}
+var boolArr = []bool{true, false, true, false, true, false, true, false, true, false}
+
+// pickRandomElement 从任意类型的切片中随机选择一个元素
+func pickRandomElement[T any](slice []T) T {
+	if len(slice) == 0 {
+		var zero T // 返回类型的零值
+		return zero
+	}
+	randomIndex := rand.Intn(len(slice))
+	return slice[randomIndex]
+}
 
 // 将大整数转换为 Base62 编码
 func toBase62(n *big.Int) string {

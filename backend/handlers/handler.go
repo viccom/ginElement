@@ -22,16 +22,16 @@ var (
 	InstListKey  = "inst@router"
 	DevAtInstKey = "dev@inst"
 	// 定义字符串数组
-	funcCode = []string{"findmax", "simtodb", "periodicPrint", "modbus"}
+	funcCode = []string{"findmax", "periodicPrint"}
 	funcMap  = map[string]testFunc{
 		"findmax":       findmax,
 		"periodicPrint": PeriodicPrint,
 	}
 	// 定义字符串数组
-	iotappCode = []string{"simtodb", "modbus"}
+	iotappCode = []string{"simulator", "modbus"}
 	IotappMap  = map[string]iotFunc{
-		"simtodb": Simtodb,
-		"modbus":  handlermobus,
+		"simulator": Simulator,
+		"modbus":    handlermobus,
 	}
 )
 

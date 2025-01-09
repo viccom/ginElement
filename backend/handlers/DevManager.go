@@ -53,6 +53,7 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 			"message": "Get DevList Fail",
 			"details": fmt.Sprintf("err: '%v' ", err3),
 		})
+		return
 	}
 	if len(values) == 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -217,7 +218,7 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 		values, err3 := cfgdb.Hash().Items(devid)
 		if err3 != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Get DevList Fail",
+				"message": "Get tags Fail",
 				"details": fmt.Sprintf("err: '%v' ", err3),
 			})
 		}

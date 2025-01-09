@@ -62,7 +62,7 @@ func main() {
 	// 提供 Swagger UI 静态文件
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 启动一个子线程运行 periodicPrint 函数
-	startWorker(handlers.IotappMap["simtodb"], cfgdb, rtdb, "simtodb")
+	startWorker(handlers.IotappMap["simulator"], cfgdb, rtdb, "simulator")
 	// 启动服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")

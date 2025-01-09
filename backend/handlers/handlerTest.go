@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/nalgeon/redka"
 	"math/rand"
@@ -89,25 +90,84 @@ func findmax(id string, stopChan chan struct{}) {
 	}
 }
 
-// simtodb函数：周期性地从 10 个随机数中找到最大值并打印
-func Simtodb(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB) {
+// Simulator函数：去设备点表中获取配置信息，然后模拟数据
+func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB) {
 	// 使用当前时间的纳秒级时间戳作为种子
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
+	// 通过ID(实例ID)获取当前函数可读写的设备配置信息和设备点表信息
+	values, err1 := cfgdb.Hash().Items(DevAtInstKey)
+	if err1 != nil {
+		fmt.Printf("Err: %v\n", err1)
+		return
+	}
+	if len(values) == 0 {
+		fmt.Printf("no device\n")
+		return
+	}
+	OutterMap := make(map[string]DevConfig)
+	for key, value := range values {
+		var newValue DevConfig
+		erra := json.Unmarshal([]byte(value.String()), &newValue)
+		if erra != nil {
+			fmt.Println("Error unmarshalling JSON:", erra)
+			return
+		}
+		fmt.Printf("键: %s, 值: %s\n", key, newValue.InstID)
+		if id == newValue.InstID {
+			OutterMap[key] = newValue
+		}
+	}
+	if len(OutterMap) == 0 {
+		fmt.Printf("no device\n")
+		return
+	}
 	for {
 		select {
 		case <-stopChan: // 如果收到停止信号，退出循环
 			fmt.Printf("Worker %v stopped\n", id)
 			return
 		default:
-			// 生成 10 个随机数
-			nums := r.Intn(100)
-			_, err := rtdb.Hash().Set("test", "test", nums)
-			if err != nil {
-				return
+			for devkey := range OutterMap {
+				fmt.Printf("键: %s, 值: %s\n", devkey)
+				// 从设备点表中获取配置信息
+				tags, err2 := cfgdb.Hash().Items(devkey)
+				if err2 != nil {
+					fmt.Printf("Err: %v\n", err2)
+					continue
+				}
+				if len(tags) != 0 {
+					// 遍历设备点表
+					for tagkey, tagvalue := range tags {
+						var newValue []string
+						erra := json.Unmarshal([]byte(tagvalue.String()), &newValue)
+						if erra != nil {
+							fmt.Println("Error unmarshalling JSON:", erra)
+							return
+						}
+						// 模拟数据
+						var value interface{}
+						if newValue[2] == "int" {
+							value = r.Intn(100)
+							rtdb.Hash().Set(devkey, tagkey, value)
+						}
+						if newValue[2] == "float" {
+							value = r.Float32() * 100
+							rtdb.Hash().Set(devkey, tagkey, value)
+						}
+						if newValue[2] == "bool" {
+							value = pickRandomElement(boolArr)
+							rtdb.Hash().Set(devkey, tagkey, value)
+						}
+						if newValue[2] == "string" {
+							value = pickRandomElement(stringArr)
+							rtdb.Hash().Set(devkey, tagkey, value)
+						}
+						fmt.Printf("标签: %s, 数值: %v\n", tagkey, value)
+					}
+				}
+
 			}
-			// 打印结果
-			fmt.Printf("Worker %v: Random number is %d\n", id, nums)
 			// 等待 1 秒
 			time.Sleep(1 * time.Second)
 		}
