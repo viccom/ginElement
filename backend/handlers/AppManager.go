@@ -44,11 +44,29 @@ type AppInfo struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/getAppDefault [post]
 func GetAppDefault(c *gin.Context) {
+	var appinfo AppInfo
+	if err := c.ShouldBindJSON(&appinfo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	appcode := appinfo.AppCode
+	var newValue = make(map[string]any)
+	newValue["app_config"] = app_default[appcode]
+	newValue["tags_default"] = tags_default[appcode]
+	if isEmptyMap(newValue["app_config"]) || isNil(newValue["app_config"]) {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "appcode is not exist",
+		})
+		return
+	}
+
+	fmt.Printf("newValue: %v\n", newValue["app_config"])
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "get app data ok",
-		"data":    "newValue",
+		"message": "get app_default ok",
+		"data":    newValue,
 	})
+
 }
 
 // @Summary 查询所有App实例配置信息

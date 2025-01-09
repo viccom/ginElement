@@ -15,6 +15,16 @@ const base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw
 var stringArr = []string{"apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew", "kiwi", "lemon"}
 var boolArr = []bool{true, false, true, false, true, false, true, false, true, false}
 
+func isNil(v any) bool {
+	return v == nil
+}
+func isEmptyMap(v any) bool {
+	if m, ok := v.(map[string]any); ok {
+		return len(m) == 0
+	}
+	return false
+}
+
 // pickRandomElement 从任意类型的切片中随机选择一个元素
 func pickRandomElement[T any](slice []T) T {
 	if len(slice) == 0 {
