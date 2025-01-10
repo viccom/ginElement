@@ -98,23 +98,24 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	defer com.Uninitialize()
 	server, err := opcda.Connect(progID, host)
 	if err != nil {
-		log.Fatalf("connect to opc server failed: %s\n", err)
+		log.Printf("connect to opc server failed: %s\n", err)
+		return
 	}
 	defer server.Disconnect()
 	// 使用当前时间的纳秒级时间戳作为种子
 	groups := server.GetOPCGroups()
 	group, err := groups.Add("group1")
 	if err != nil {
-		log.Fatalf("add group failed: %s\n", err)
+		log.Printf("add group failed: %s\n", err)
 	}
 	items := group.OPCItems()
 	itemList, errs, err := items.AddItems(opctags)
 	if err != nil {
-		log.Fatalf("add items failed: %s\n", err)
+		log.Printf("add items failed: %s\n", err)
 	}
 	for i, err := range errs {
 		if err != nil {
-			log.Fatalf("add item %s failed: %s\n", opctags[i], err)
+			log.Printf("add item %s failed: %s\n", opctags[i], err)
 		}
 	}
 	// Wait for the OPC server to be ready
@@ -148,7 +149,7 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	}()
 	err = group.RegisterDataChange(ch)
 	if err != nil {
-		log.Fatalf("register data change failed: %s\n", err)
+		log.Printf("register data change failed: %s\n", err)
 	}
 	log.Println("Registered data change in OPCDA")
 	select {
