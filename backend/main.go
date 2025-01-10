@@ -61,7 +61,8 @@ func main() {
 
 	// 提供 Swagger UI 静态文件
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	// 启动一个子线程运行 periodicPrint 函数
+
+	// 启动配置中设置为程序运行自启动的实例
 	items, err := cfgdb.Hash().Items(handlers.InstListKey)
 	if err != nil {
 		return
@@ -79,7 +80,7 @@ func main() {
 		}
 	}
 
-	// 启动服务
+	// 启动WEB服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")
 	if err != nil {

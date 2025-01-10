@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// appCode=["findmax", "periodicPrint", "modbus"]
+// appCode=["simulator", "modbus", "opcada"]
 // appType=["toSouth", "toNorth", "System", "Others"]
 // channel=["tcp", "udp", "serial"]
 // protocol=["rtu", "tcp", "ascii", "rtuovertcp", "rtuoverudp"]

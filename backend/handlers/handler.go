@@ -28,10 +28,11 @@ var (
 		"periodicPrint": PeriodicPrint,
 	}
 	// 定义字符串数组
-	iotappCode = []string{"simulator", "modbus"}
+	iotappCode = []string{"simulator", "modbus", "opcda"}
 	IotappMap  = map[string]iotFunc{
 		"simulator": Simulator,
 		"modbus":    handlermobus,
+		"opcda":     OpcDARead,
 	}
 )
 

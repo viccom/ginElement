@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"unicode"
 )
 
 const base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -141,4 +142,20 @@ func EnsureDirExists(dirName string) error {
 		log.Printf("Directory '%s' created successfully.\n", dirName)
 	}
 	return nil
+}
+
+// 去除首位不可见字符
+func trimInvisible(s string) string {
+	start := 0
+	for start < len(s) && unicode.IsSpace(rune(s[start])) {
+		start++
+	}
+	end := len(s) - 1
+	for end >= 0 && unicode.IsSpace(rune(s[end])) {
+		end--
+	}
+	if end < start {
+		return ""
+	}
+	return s[start : end+1]
 }
