@@ -22,12 +22,24 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	configstr := appconfig.String()
 	var newConfig AppConfig
 	err = json.Unmarshal([]byte(configstr), &newConfig)
-	configMap, ok := newConfig.Config.(map[string]interface{})
+	configMap := newConfig.Config
+	fmt.Printf("myConfig %+v\n", configMap)
+	// 提取外层的 "Config"
+	config, ok := configMap.(map[string]any) // 类型断言为 map[string]any
 	if !ok {
-		fmt.Println("Config is not a map[string]interface{}")
+		fmt.Println("Config is not a map[string]any or does not exist")
 		return
 	}
-	fmt.Printf("myConfig %+v\n", configMap)
+	//host := "localhost"
+	//progID := "Matrikon.OPC.Simulation.1"
+	host, ok := config["host"].(string)
+	if !ok {
+		fmt.Println("host is not a string or does not exist")
+	}
+	progID, ok := config["progID"].(string)
+	if !ok {
+		fmt.Println("progID is not a string or does not exist")
+	}
 	// 通过ID(实例ID)获取当前函数可读写的设备配置信息和设备点表信息
 	devValues, err1 := cfgdb.Hash().Items(DevAtInstKey)
 	if err1 != nil {
@@ -82,10 +94,6 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		}
 	}
 	//从OPCDA Server读取数据处理逻辑
-	//host := "localhost"
-	//progID := "Matrikon.OPC.Simulation.1"
-	host := configMap["host"].(string)
-	progID := configMap["progid"].(string)
 	com.Initialize()
 	defer com.Uninitialize()
 	server, err := opcda.Connect(progID, host)
