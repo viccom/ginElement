@@ -127,11 +127,12 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 
 			case data := <-ch:
 				fmt.Printf("data change received, transaction id: %d, group handle: %d, masterQuality: %d, masterError: %v\n", data.TransID, data.GroupHandle, data.MasterQuality, data.MasterErr)
+				datasmap := make(map[string]map[string]any)
 				for i := 0; i < len(data.ItemClientHandles); i++ {
-					tag := ""
+					tagkey := ""
 					for _, item := range itemList {
 						if item.GetClientHandle() == data.ItemClientHandles[i] {
-							tag = trimInvisible(item.GetItemID())
+							tagkey = trimInvisible(item.GetItemID())
 						}
 					}
 					// 将 data.Values[i] 转换为字符串
@@ -139,11 +140,22 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					unixTime := data.TimeStamps[i].Unix()
 					timestampstr := data.TimeStamps[i].Format("2006-01-02 15:04:05")
 					quality := uint8(data.Qualities[i])
-					fmt.Printf("data : %s %s %d %s %d\n", tag, timestampstr, quality, valueStr, unixTime)
+					fmt.Printf("data : %s %s %d %s %d\n", tagkey, timestampstr, quality, valueStr, unixTime)
+					valueMap := []any{timestampstr, data.Values[i], unixTime}
+					valueMapJson, _ := json.Marshal(valueMap)
+					devkey := tagParent[tagkey]
+					datasmap[devkey][tagkey] = valueMapJson
 					//	将数据增加到设备数据集合中
 					//fmt.Println(tagParent[tag])
 				}
-
+				//	统一将数据写入到redka数据库
+				for devkey := range datasmap {
+					_, errz := rtdb.Hash().SetMany(devkey, datasmap[devkey])
+					if errz != nil {
+						fmt.Printf("Err: %v\n", errz)
+						continue
+					}
+				}
 			}
 		}
 	}()
