@@ -71,7 +71,8 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	// 用于存储所有订阅数据的OPC标签
 	opctags := make([]string, 0)
 	// 用于存储每个标签的父设备
-	tagParent := make(map[string]string, 0)
+	opcBind := make(map[string]string, 0)
+	opcParent := make(map[string]string, 0)
 	for devkey := range devMap {
 		// 从设备点表中获取配置信息
 		tags, err2 := cfgdb.Hash().Items(devkey)
@@ -88,8 +89,10 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					fmt.Println("Error unmarshalling JSON:", erra)
 					return
 				}
-				opctags = append(opctags, tagkey)
-				tagParent[tagkey] = devkey
+				opcitem := newValue[0]
+				opctags = append(opctags, opcitem)
+				opcParent[opcitem] = devkey
+				opcBind[opcitem] = tagkey
 			}
 		}
 	}
@@ -129,24 +132,25 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 				fmt.Printf("data change received, transaction id: %d, group handle: %d, masterQuality: %d, masterError: %v\n", data.TransID, data.GroupHandle, data.MasterQuality, data.MasterErr)
 				datasmap := make(map[string]map[string]any)
 				for i := 0; i < len(data.ItemClientHandles); i++ {
-					tagkey := ""
+					opcitem := ""
 					for _, item := range itemList {
 						if item.GetClientHandle() == data.ItemClientHandles[i] {
-							tagkey = trimInvisible(item.GetItemID())
+							opcitem = trimInvisible(item.GetItemID())
 						}
 					}
 					// 将 data.Values[i] 转换为字符串
-					valueStr := fmt.Sprintf("%v", data.Values[i])
 					unixTime := data.TimeStamps[i].Unix()
 					timestampstr := data.TimeStamps[i].Format("2006-01-02 15:04:05")
-					quality := uint8(data.Qualities[i])
-					fmt.Printf("data : %s %s %d %s %d\n", tagkey, timestampstr, quality, valueStr, unixTime)
+					//valueStr := fmt.Sprintf("%v", data.Values[i])
+					//quality := uint8(data.Qualities[i])
+					//fmt.Printf("data : %s %s %d %s %d\n", opcitem, timestampstr, quality, valueStr, unixTime)
 					valueMap := []any{timestampstr, data.Values[i], unixTime}
 					valueMapJson, _ := json.Marshal(valueMap)
-					devkey := tagParent[tagkey]
+					devkey := opcParent[opcitem]
 					if datasmap[devkey] == nil {
 						datasmap[devkey] = make(map[string]any)
 					}
+					tagkey := opcBind[opcitem]
 					datasmap[devkey][tagkey] = valueMapJson
 					//	将数据增加到设备数据集合中
 					//fmt.Println(tagParent[tag])
