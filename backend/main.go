@@ -8,6 +8,8 @@ import (
 	"ginElement/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/nalgeon/redka"
+	"os/exec"
+	"runtime"
 
 	swaggerFiles "github.com/swaggo/files"     // 用于提供 Swagger UI 静态文件
 	ginSwagger "github.com/swaggo/gin-swagger" // 用于集成 Swagger UI 到 Gin
@@ -79,13 +81,20 @@ func main() {
 			startWorker(handlers.IotappMap[appconfig.AppCode], cfgdb, rtdb, appconfig.InstID)
 		}
 	}
-
+	url := "http://127.0.0.1:8880/swagger/index.html"
+	erra := openBrowser(url)
+	if erra != nil {
+		fmt.Printf("Failed to open browser: %s\n", erra)
+	} else {
+		fmt.Printf("Opened %s in your default browser.\n", url)
+	}
 	// 启动WEB服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")
 	if err != nil {
 		return
 	}
+
 }
 
 func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), cfgdb *redka.DB, rtdb *redka.DB, workerName string) {
@@ -111,4 +120,23 @@ func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), c
 	}()
 
 	handlers.Workers[workerName] = stopChan
+}
+
+func openBrowser(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start", url}
+	case "darwin":
+		cmd = "open"
+		args = []string{url}
+	default: // "linux", "freebsd", "openbsd", "netbsd"
+		cmd = "xdg-open"
+		args = []string{url}
+	}
+
+	return exec.Command(cmd, args...).Start()
 }

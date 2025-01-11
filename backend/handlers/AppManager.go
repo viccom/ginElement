@@ -316,6 +316,10 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 	defer workersLock.Unlock()
 	instid := instopt.InstId
 	appcode, _ := extractChar(instid)
+	//如果appcode=="opcda"时，ostype!="Windows"返回错误
+	//if appcode=="opcda" && ostype!="Windows" {
+	//	c.JSON(http.StatusBadRequest, gin.H{
+	//		"message": "opcda not support on this platform",
 	now := time.Now()
 	formattedDate := now.Format("2006-01-02 15:04:05")
 	// 检查 funcMap 中是否存在对应的函数

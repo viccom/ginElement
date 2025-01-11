@@ -136,12 +136,12 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					}
 					// 将 data.Values[i] 转换为字符串
 					valueStr := fmt.Sprintf("%v", data.Values[i])
-					unixTime := data.TimeStamps[i]
+					unixTime := data.TimeStamps[i].Unix()
 					timestampstr := data.TimeStamps[i].Format("2006-01-02 15:04:05")
 					quality := uint8(data.Qualities[i])
 					fmt.Printf("data : %s %s %d %s %d\n", tag, timestampstr, quality, valueStr, unixTime)
 					//	将数据增加到设备数据集合中
-					fmt.Println(tagParent[tag])
+					//fmt.Println(tagParent[tag])
 				}
 
 			}
