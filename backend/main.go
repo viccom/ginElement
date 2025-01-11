@@ -85,8 +85,6 @@ func main() {
 	erra := openBrowser(url)
 	if erra != nil {
 		fmt.Printf("Failed to open browser: %s\n", erra)
-	} else {
-		fmt.Printf("Opened %s in your default browser.\n", url)
 	}
 	// 启动WEB服务
 	fmt.Println("Server is running on :8880...")
