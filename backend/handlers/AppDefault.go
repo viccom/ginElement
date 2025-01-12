@@ -27,6 +27,21 @@ var (
 				"progID": "Matrikon.OPC.Simulation.1",
 			},
 		},
+		"opcua": {
+			"appCode":   "opcua",
+			"appType":   "toSouth",
+			"instId":    "",
+			"instName":  "opcua app",
+			"autoStart": false,
+			"config": map[string]any{
+				"endpoint": "opc.tcp://localhost:4840",
+				"policy":   "Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: auto",
+				"mode":     "Sign and Encrypt, Sign, None. Default: auto",
+				"cert":     "certificate file path",
+				"key":      "private key file path",
+				"interval": "subscription interval",
+			},
+		},
 		"simulator": {
 			"appCode":   "simulator",
 			"appType":   "toSouth",
@@ -52,10 +67,20 @@ var (
 			"devId":  "DEV_7JF3ZMbgvQfvAYpo",
 			"instid": "opcda@g53tOZn138pdXnup",
 			"tagsMap": map[string]any{
-				"bool1":    []any{"bool1", "布尔量1", "bool"},
-				"analog1":  []any{"analog1", "模拟量1", "float"},
-				"digital1": []any{"digital1", "数字量1", "int"},
-				"string1":  []any{"string1", "字符量1", "string"},
+				"tag1": []any{"bool1", "tag1", "布尔量1", "bool"},
+				"tag2": []any{"analog1", "tag2", "模拟量1", "float"},
+				"tag3": []any{"digital1", "tag3", "数字量1", "int"},
+				"tag4": []any{"string1", "tag4", "字符量1", "string"},
+			},
+		},
+		"opcua": {
+			"devId":  "DEV_7JF3ZMbgvQfvAYpo",
+			"instid": "opcua@g53tOZn138pdXnup",
+			"tagsMap": map[string]any{
+				"tag1": []any{"ns=2;s=数据类型示例.8 位设备.B 寄存器.Boolean1", "tag1", "布尔量1", "bool"},
+				"tag2": []any{"ns=2;s=模拟器示例.函数.Sine1", "tag2", "模拟量1", "float"},
+				"tag3": []any{"ns=2;s=模拟器示例.函数.Ramp1", "tag3", "数字量1", "int"},
+				"tag4": []any{"ns=2;s=数据类型示例.8 位设备.S 寄存器.String1", "tag4", "字符量1", "string"},
 			},
 		},
 		"simulator": {

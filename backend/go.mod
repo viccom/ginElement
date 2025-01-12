@@ -6,6 +6,7 @@ require github.com/gin-gonic/gin v1.10.0
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/gopcua/opcua v0.6.2
 	github.com/huskar-t/opcda v0.3.3
 	github.com/nalgeon/redka v0.5.3
 	github.com/ncruces/go-sqlite3 v0.21.3
