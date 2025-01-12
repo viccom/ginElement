@@ -31,7 +31,7 @@ var (
 	iotappCode = []string{"simulator", "modbus", "opcda"}
 	IotappMap  = map[string]iotFunc{
 		"simulator": Simulator,
-		"modbus":    handlermobus,
+		"modbus":    ModbusRead,
 		"opcda":     OpcDARead,
 	}
 )

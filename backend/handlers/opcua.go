@@ -161,7 +161,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		startCallbackSub(ctx, m, interval, 1, wg, opctags...)
+		startCallbackSub(ctx, m, interval, 1, wg, rtdb, opctags...)
 	}()
 	for {
 		select {
@@ -172,7 +172,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	}
 }
 
-func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, nodes ...string) {
+func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, rtdb *redka.DB, nodes ...string) {
 	sub, err := m.Subscribe(
 		ctx,
 		&opcua.SubscriptionParameters{
