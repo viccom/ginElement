@@ -346,8 +346,17 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 		})
 		return
 	}
+	// 检查子线程是否已经在运行
+	if _, cexists := Workers[instid]; cexists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Worker " + instid + " is running",
+			"data":    instopt,
+		})
+		return
+	}
 	// 创建停止通道
 	stopChan := make(chan struct{})
+
 	// 启动子线程
 	go func() {
 		defer func() {
