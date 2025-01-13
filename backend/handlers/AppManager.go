@@ -316,10 +316,25 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 	defer workersLock.Unlock()
 	instid := instopt.InstId
 	appcode, _ := extractChar(instid)
+	isSupport, msg := appCheck(appcode)
 	//如果appcode=="opcda"时，ostype!="Windows"返回错误
-	//if appcode=="opcda" && ostype!="Windows" {
+	if !isSupport {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": appcode + " not support",
+			"details": fmt.Sprintf(msg),
+		})
+		return
+	}
+
+	//如果应用实例是南向应用且中没有任何便签点
+	//hasTag, msg := appHasTag(appcode, cfgdb)
+	//if !hasTag {
 	//	c.JSON(http.StatusBadRequest, gin.H{
-	//		"message": "opcda not support on this platform",
+	//		"message": instid + " no tag",
+	//		"details": fmt.Sprintf(msg),
+	//	})
+	//	return
+	//}
 	now := time.Now()
 	formattedDate := now.Format("2006-01-02 15:04:05")
 	// 检查 funcMap 中是否存在对应的函数
@@ -332,7 +347,6 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 		return
 	}
 	// 创建停止通道
-
 	stopChan := make(chan struct{})
 	// 启动子线程
 	go func() {
@@ -344,6 +358,11 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 			default:
 				close(stopChan) // 关闭 channel
 			}
+			// 通知全局变量 Workers 删除对应的线程 ID
+			workersLock.Lock()
+			delete(Workers, instid)
+			workersLock.Unlock()
+			fmt.Printf("StartApp提示：子线程退出,线程ID: %s 已从全局变量中删除\n", instid)
 		}()
 		fn(instid, stopChan, cfgdb, rtdb) // 调用对应的函数
 	}()
@@ -372,17 +391,8 @@ func StopApp(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	workersLock.Lock()
-	defer workersLock.Unlock()
 	instid := instopt.InstId
-	//var workerID string
-	//_, err := fmt.Sscanf(instid, "%v", &workerID)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, gin.H{
-	//		"message": "Invalid ID",
-	//	})
-	//	return
-	//}
+
 	// 查找子线程的停止通道
 	stopChan, exists := Workers[instid]
 	if !exists {
@@ -395,6 +405,15 @@ func StopApp(c *gin.Context) {
 	close(stopChan)
 	// 从全局变量中移除子线程
 	delete(Workers, instid)
+	// 等待子线程退出
+	//wg.Wait()
+
+	// 检查全局变量 Workers 是否已删除对应的线程 ID
+	workersLock.Lock()
+	if _, cexists := Workers[instid]; !cexists {
+		fmt.Printf("StopApp提示：子线程 %s 已成功从全局变量中删除\n", instid)
+	}
+	workersLock.Unlock()
 	// 返回成功消息
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Worker stopped",

@@ -104,6 +104,15 @@ func NewDev(c *gin.Context, cfgdb *redka.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	instId := devConfig.InstID
+	devName := devConfig.DevName
+	if instId == "" || devName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "New Dev Creat Fail",
+			"details": "instid or devname is not allowed to be empty",
+		})
+		return
+	}
 	// 生成一个新的16位 UUID
 	uuidstr := "DEV_" + gen16ID()
 	devConfig.DevID = uuidstr
@@ -125,7 +134,7 @@ func NewDev(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 删除设备配置信息【未实现】
+// @Summary 删除设备配置信息
 // @Description 这是一个删除设备配置信息的接口
 // @Tags DEV Manager
 // @Accept json
@@ -140,11 +149,34 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// 返回数据库cfgdb中App配置信息 列表
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Del Dev OK",
-		"devlist": devOpt,
-	})
+	devlist := devOpt.DevList
+	delResult := make(map[string]string)
+	delError := make([]string, 0)
+	for _, devid := range devlist {
+		_, err := cfgdb.Hash().Delete(DevAtInstKey, devid)
+		if err != nil {
+			delResult[devid] = err.Error()
+			delError = append(delError, devid)
+		} else {
+			delResult[devid] = "Delete OK"
+		}
+
+	}
+
+	if len(delError) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Del Dev Fail",
+			"details": delResult,
+		})
+		return
+	} else {
+		// 返回数据库cfgdb中App配置信息 列表
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Del Dev OK",
+			"devlist": devOpt,
+		})
+	}
+
 }
 
 // @Summary 向设备增加点表信息

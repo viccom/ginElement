@@ -127,7 +127,7 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		case <-stopChan: // 如果收到停止信号，退出循环
 			now := time.Now()
 			formattedDate := now.Format("2006-01-02 15:04:05")
-			fmt.Printf("%v Worker %v stopped\n", formattedDate, id)
+			fmt.Printf("%v 子线程Simulator实例 %v stopped\n", formattedDate, id)
 			return
 		default:
 			for devkey := range OutterMap {

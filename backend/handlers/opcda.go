@@ -96,6 +96,10 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 			}
 		}
 	}
+	if len(opctags) == 0 {
+		fmt.Printf("instid %v no tag\n", id)
+		return
+	}
 	//从OPCDA Server读取数据处理逻辑
 	com.Initialize()
 	defer com.Uninitialize()
@@ -129,7 +133,7 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 			select {
 
 			case data := <-ch:
-				fmt.Printf("data change received, transaction id: %d, group handle: %d, masterQuality: %d, masterError: %v\n", data.TransID, data.GroupHandle, data.MasterQuality, data.MasterErr)
+				//fmt.Printf("data change received, transaction id: %d, group handle: %d, masterQuality: %d, masterError: %v\n", data.TransID, data.GroupHandle, data.MasterQuality, data.MasterErr)
 				datasmap := make(map[string]map[string]any)
 				for i := 0; i < len(data.ItemClientHandles); i++ {
 					opcitem := ""
@@ -144,6 +148,7 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					//valueStr := fmt.Sprintf("%v", data.Values[i])
 					//quality := uint8(data.Qualities[i])
 					//fmt.Printf("data : %s %s %d %s %d\n", opcitem, timestampstr, quality, valueStr, unixTime)
+					//	将数据增加到设备数据集合中
 					valueMap := []any{timestampstr, data.Values[i], unixTime}
 					valueMapJson, _ := json.Marshal(valueMap)
 					devkey := opcParent[opcitem]
@@ -152,7 +157,6 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					}
 					tagkey := opcBind[opcitem]
 					datasmap[devkey][tagkey] = valueMapJson
-					//	将数据增加到设备数据集合中
 					//fmt.Println(tagParent[tag])
 				}
 				//	统一将数据写入到redka数据库
@@ -174,7 +178,7 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	select {
 	case <-stopChan:
 		group.Release()
-		log.Println("Received stop signal. Exiting readOPCDAData goroutine.")
+		fmt.Printf("子线程OPCDA实例 %s 收到停止信号，退出\n", id)
 		err := server.Disconnect()
 		if err != nil {
 			return

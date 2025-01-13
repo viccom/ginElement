@@ -34,12 +34,12 @@ var (
 			"instName":  "opcua app",
 			"autoStart": false,
 			"config": map[string]any{
-				"endpoint": "opc.tcp://localhost:4840",
+				"endpoint": "opc.tcp://localhost:49320",
 				"policy":   "Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: auto",
 				"mode":     "Sign and Encrypt, Sign, None. Default: auto",
 				"cert":     "certificate file path",
 				"key":      "private key file path",
-				"interval": "subscription interval",
+				"interval": 1,
 			},
 		},
 		"simulator": {

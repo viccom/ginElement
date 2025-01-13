@@ -28,10 +28,10 @@ func GetSysInfo(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	OutterMap := make(map[string]string)
-	os := runtime.GOOS
-	arch := runtime.GOARCH
-	OutterMap["os"] = os
-	OutterMap["arch"] = arch
+	ThisOs := runtime.GOOS
+	ThisArch := runtime.GOARCH
+	OutterMap["os"] = ThisOs
+	OutterMap["arch"] = ThisArch
 	for key, value := range values {
 		OutterMap[key] = value.String()
 	}

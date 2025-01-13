@@ -108,6 +108,10 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 			}
 		}
 	}
+	if len(mbtags) == 0 {
+		fmt.Printf("instid %v no tag\n", id)
+		return
+	}
 	var client *modbus.ModbusClient
 	var mbConnected = false
 	client, err = modbus.NewClient(&modbus.ClientConfiguration{
@@ -126,7 +130,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	for {
 		select {
 		case <-stopChan: // 如果收到停止信号，退出循环
-			fmt.Printf("Worker %v stopped\n", id)
+			fmt.Printf("子线程MODBUS实例 %s 收到停止信号，退出\n", id)
 			return
 		default:
 			if !mbConnected {

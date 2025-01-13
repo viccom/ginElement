@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/nalgeon/redka"
 	"log"
 	"math/big"
 	"math/rand"
 	"os"
+	"runtime"
 	"strings"
 	"unicode"
 )
@@ -158,4 +161,69 @@ func trimInvisible(s string) string {
 		return ""
 	}
 	return s[start : end+1]
+}
+
+// 检测app是否支持当前系统
+func appCheck(s string) (bool, string) {
+	ThisOs := runtime.GOOS
+	ThisArch := runtime.GOARCH
+	if s == "opcda" {
+		if ThisOs == "windows" && ThisArch == "386" {
+			return true, s + " support " + ThisOs + " " + ThisArch
+		} else {
+			return false, s + " not support " + ThisOs + " " + ThisArch
+		}
+	}
+	return true, s + " is not in CheckList, pass"
+}
+
+// 检测app是否有设备和采集点
+func appHasTag(id string, cfgdb *redka.DB) (bool, string) {
+	// 通过ID(实例ID)获取当前函数可读写的设备配置信息和设备点表信息
+	devValues, err1 := cfgdb.Hash().Items(DevAtInstKey)
+	if err1 != nil {
+		fmt.Printf("Err: %v\n", err1)
+		return false, fmt.Sprintf("Err: %v", err1)
+	}
+	if len(devValues) == 0 {
+		fmt.Printf("database no any device\n")
+		return false, "database no any device"
+	}
+	devMap := make(map[string]DevConfig)
+	for key, value := range devValues {
+		var newValue DevConfig
+		erra := json.Unmarshal([]byte(value.String()), &newValue)
+		if erra != nil {
+			fmt.Println("Error unmarshalling JSON:", erra)
+			return false, "Error unmarshalling JSON"
+		}
+		fmt.Printf("键: %s, Queryid: %s, InstID: %s\n", key, id, newValue.InstID)
+		if id == newValue.InstID {
+			devMap[key] = newValue
+		}
+	}
+	if len(devMap) == 0 {
+		fmt.Printf("instid %v no match device\n", id)
+		return false, fmt.Sprintf("instid %v no match device\n", id)
+	}
+	// 通过设备ID获取设备点表信息
+	myTags := make([]any, 0)
+	for devkey := range devMap {
+		// 从设备点表中获取配置信息
+		tags, err2 := cfgdb.Hash().Items(devkey)
+		if err2 != nil {
+			fmt.Printf("Err: %v\n", err2)
+			continue
+		}
+		if len(tags) != 0 {
+			// 遍历设备点表获取数据
+			for _, tagvalue := range tags {
+				myTags = append(myTags, tagvalue)
+			}
+		}
+	}
+	if len(myTags) == 0 {
+		return false, fmt.Sprintf("instid %v has tag", id)
+	}
+	return true, fmt.Sprintf("instid %v no tag", id)
 }

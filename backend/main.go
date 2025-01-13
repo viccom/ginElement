@@ -113,11 +113,17 @@ func startWorker(workerFunc func(string, chan struct{}, *redka.DB, *redka.DB), c
 			default:
 				close(stopChan)
 			}
+			// 通知全局变量 Workers 删除对应的线程 ID
+			workersLock.Lock()
+			delete(handlers.Workers, workerName)
+			workersLock.Unlock()
+			fmt.Printf("子线程 %s 已从全局变量中删除\n", workerName)
 		}()
 		workerFunc(workerName, stopChan, cfgdb, rtdb)
 	}()
-
+	//workersLock.Lock()
 	handlers.Workers[workerName] = stopChan
+	//workersLock.Unlock()
 }
 
 func openBrowser(url string) error {
