@@ -154,38 +154,78 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	m.SetErrorHandler(func(_ *opcua.Client, sub *monitor.Subscription, err error) {
 		log.Printf("error: sub=%d err=%s", sub.SubscriptionID(), err.Error())
 	})
-
+	// 创建队列
+	queue := NewDataQueue()
 	// 创建 WaitGroup 用于同步
 	wg := &sync.WaitGroup{}
 	// 启动子线程
 	// start callback-based subscription
 	wg.Add(1)
-	go startCallbackSub(ctx, m, 1, 0, wg, opctags...)
+	go startCallbackSub(ctx, m, 1, 0, wg, queue, opctags...)
 
 	// 监听停止信号
-	select {
-	case <-stopChan:
-		fmt.Printf("子线程OPCUA实例 %s 收到停止信号，退出\n", id)
-		cancel()  // 取消上下文，确保 startCallbackSub 退出
-		wg.Wait() // 等待子线程退出
-		return
+	for {
+		select {
+		case <-stopChan:
+			fmt.Printf("子线程OPCUA实例 %s 收到停止信号，退出\n", id)
+			cancel()  // 取消上下文，确保 startCallbackSub 退出
+			wg.Wait() // 等待子线程退出
+			return
+		default:
+			// 没有停止信号，继续运行
+			//fmt.Printf("子线程OPCUA实例 %s 正在运行\n", id)
+			datasmap := make(map[string]map[string]any)
+			for queue.Len() > 0 {
+				fmt.Println("Queue Length:", queue.Len())
+				if val, ok := queue.Dequeue(); ok {
+					fmt.Println("Consumed:", val)
+					var data []any
+					err := json.Unmarshal([]byte(val), &data)
+					if err != nil {
+						fmt.Println("解析失败:", err)
+						return
+					}
+					opcitem := data[0].(string)
+					devkey := opcParent[opcitem]
+					if datasmap[devkey] == nil {
+						datasmap[devkey] = make(map[string]any)
+					}
+					tagkey := opcBind[opcitem]
+					valueMap := []any{data[1], data[2], data[3]}
+					valueMapJson, _ := json.Marshal(valueMap)
+					datasmap[devkey][tagkey] = valueMapJson
+				}
+			}
+			//	统一将数据写入到redka数据库
+			for devkey := range datasmap {
+				_, errz := rtdb.Hash().SetMany(devkey, datasmap[devkey])
+				if errz != nil {
+					fmt.Printf("Err: %v\n", errz)
+					continue
+				}
+			}
+			time.Sleep(1 * time.Second)
+		}
 	}
 }
 
-func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, nodes ...string) {
+func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, queue *DataQueue, nodes ...string) {
 	defer wg.Done() // 确保在函数退出时调用 Done()
-
 	sub, err := m.Subscribe(
 		ctx,
 		&opcua.SubscriptionParameters{
 			Interval: interval,
 		},
+
 		func(s *monitor.Subscription, msg *monitor.DataChangeMessage) {
 			if msg.Error != nil {
 				log.Printf("[callback] sub=%d error=%s", s.SubscriptionID(), msg.Error)
 			} else {
-				log.Printf("[callback] sub=%d ts=%s node=%s value=%v", s.SubscriptionID(), msg.ServerTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
-
+				//log.Printf("[callback] sub=%d ts=%s node=%s value=%v", s.SubscriptionID(), msg.ServerTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
+				//datasmap := make(map[string]map[string]any)
+				valueMap := []any{msg.NodeID, msg.ServerTimestamp.UTC().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix()}
+				valueMapJson, _ := json.Marshal(valueMap)
+				queue.Enqueue(string(valueMapJson))
 			}
 			time.Sleep(lag)
 		},

@@ -37,6 +37,52 @@ var (
 	}
 )
 
+// 定义 DataQueue 结构
+type DataQueue struct {
+	data  []string
+	mutex sync.Mutex
+	cond  *sync.Cond
+}
+
+// 初始化 DataQueue
+func NewDataQueue() *DataQueue {
+	q := &DataQueue{
+		data: make([]string, 0),
+	}
+	q.cond = sync.NewCond(&q.mutex)
+	return q
+}
+
+// 入队操作
+func (q *DataQueue) Enqueue(d string) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.data = append(q.data, d)
+	q.cond.Signal() // 通知等待的消费者
+}
+
+// 出队操作
+func (q *DataQueue) Dequeue() (string, bool) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	// 如果队列为空，等待数据
+	for len(q.data) == 0 {
+		q.cond.Wait()
+	}
+
+	val := q.data[0]
+	q.data = q.data[1:]
+	return val, true
+}
+
+// 获取队列长度
+func (q *DataQueue) Len() int {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	return len(q.data)
+}
+
 // @Summary 启动线程运行函数接口
 // @Description 这是一个启动线程的接口
 // @Tags 示例
