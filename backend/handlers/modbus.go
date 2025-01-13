@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// ModbusRead 函数：周期性地从 10 个随机数中找到最大值并打印
+// ModbusRead 函数：周期性地读取modbus设备数据
 func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB) {
 	//通过ID(实例ID)获取实例的配置信息
 	appconfig, err := cfgdb.Hash().Get(InstListKey, id)
@@ -41,13 +41,13 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	if !ok {
 		fmt.Println("host is not a string or does not exist")
 	}
-	port, ok := config["port"].(int16)
+	port, ok := config["port"].(float64)
 	if !ok {
-		fmt.Println("port is not a string or does not exist")
+		fmt.Println("port is not a int or does not exist")
 	}
-	slaveId, ok := config["slaveId"].(string)
+	slaveId, ok := config["slaveId"].(float64)
 	if !ok {
-		fmt.Println("slaveId is not a string or does not exist")
+		fmt.Println("slaveId is not a int or does not exist")
 	}
 	protocol, ok := config["protocol"].(string)
 	if !ok {
@@ -97,13 +97,26 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 		if len(tags) != 0 {
 			// 遍历设备点表获取数据
 			for tagkey, tagvalue := range tags {
-				var newValue []string
+				//var newValue []string
+				//fmt.Printf("%+v\n", tagvalue.String())
+				//erra := json.Unmarshal([]byte(tagvalue.String()), &newValue)
+				//if erra != nil {
+				//	fmt.Println("Error unmarshalling JSON:", erra)
+				//	return
+				//}
+				var newValue []any // 使用 []any 类型
 				erra := json.Unmarshal([]byte(tagvalue.String()), &newValue)
 				if erra != nil {
 					fmt.Println("Error unmarshalling JSON:", erra)
 					return
 				}
-				mbtags = append(mbtags, newValue)
+				// 将 newValue 中的值转换为字符串
+				var strValues []string
+				for _, v := range newValue {
+					strValues = append(strValues, fmt.Sprintf("%v", v)) // 使用 fmt.Sprintf 将任意类型转换为字符串
+				}
+
+				mbtags = append(mbtags, strValues)
 				mbParent[tagkey] = devkey
 			}
 		}
@@ -120,7 +133,12 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 		Timeout: 1 * time.Second,
 	})
 	if err != nil {
-		defer client.Close()
+		defer func(client *modbus.ModbusClient) {
+			errc := client.Close()
+			if errc != nil {
+
+			}
+		}(client)
 	}
 
 	mbfcode := map[string]modbus.RegType{
@@ -158,18 +176,34 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				// Switch to unit ID
 				deviceUnitid, _ := strconv.Atoi(m[2])
 				registerAddress, _ := strconv.Atoi(m[4])
+				fccode := m[3]
+				dataType := m[5]
 				err = client.SetUnitId(uint8(deviceUnitid))
 				var value any
 				var errmb error
-				if m[5] == "int16" {
-					value, errmb = client.ReadRegister(uint16(registerAddress), mbfcode[m[3]])
+				if dataType == "int16" {
+					value, errmb = client.ReadRegister(uint16(registerAddress), mbfcode[fccode])
 					if errmb != nil {
 						log.Printf("Error reading Modbus data: %v\n", errmb)
 						continue
 					}
 				}
-				if m[5] == "float32" {
-					value, errmb = client.ReadFloat32(uint16(registerAddress), mbfcode[m[3]])
+				if dataType == "float32" {
+					value, errmb = client.ReadFloat32(uint16(registerAddress), mbfcode[fccode])
+					if errmb != nil {
+						log.Printf("Error reading Modbus data: %v\n", errmb)
+						continue
+					}
+				}
+				if dataType == "bool" && fccode == "01" {
+					value, errmb = client.ReadCoil(uint16(registerAddress))
+					if errmb != nil {
+						log.Printf("Error reading Modbus data: %v\n", errmb)
+						continue
+					}
+				}
+				if dataType == "bool" && fccode == "02" {
+					value, errmb = client.ReadDiscreteInput(uint16(registerAddress))
 					if errmb != nil {
 						log.Printf("Error reading Modbus data: %v\n", errmb)
 						continue

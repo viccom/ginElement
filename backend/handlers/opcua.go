@@ -185,6 +185,7 @@ func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag
 				log.Printf("[callback] sub=%d error=%s", s.SubscriptionID(), msg.Error)
 			} else {
 				log.Printf("[callback] sub=%d ts=%s node=%s value=%v", s.SubscriptionID(), msg.ServerTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
+
 			}
 			time.Sleep(lag)
 		},

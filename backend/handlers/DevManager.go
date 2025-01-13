@@ -24,9 +24,9 @@ type DevOpt struct {
 
 // 定义 DevTags 结构体
 type DevTags struct {
-	DevID   string              `json:"devId"`
-	InstID  string              `json:"instid"`
-	TagsMap map[string][]string `json:"tagsMap"`
+	DevID   string           `json:"devId"`
+	InstID  string           `json:"instid"`
+	TagsMap map[string][]any `json:"tagsMap"`
 }
 
 // @Summary 获取设备配置信息
