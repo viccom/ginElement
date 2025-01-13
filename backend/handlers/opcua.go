@@ -9,8 +9,6 @@ import (
 	"github.com/gopcua/opcua/ua"
 	"github.com/nalgeon/redka"
 	"log"
-	"os"
-	"os/signal"
 	"sync"
 	"time"
 )
@@ -68,7 +66,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		fmt.Printf("database no any device\n")
 		return
 	}
-
+	//通过设备ID获取设备点信息
 	devMap := make(map[string]DevConfig)
 	for key, value := range devValues {
 		var newValue DevConfig
@@ -87,7 +85,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		return
 	}
 
-	// 通过设备ID获取设备点表信息
+	// 通过已经获取设备点表信息生成设备采集点表
 	opctags := make([]string, 0)
 	opcBind := make(map[string]string, 0)
 	opcParent := make(map[string]string, 0)
@@ -117,17 +115,8 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		return
 	}
 
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, os.Interrupt)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	go func() {
-		<-signalCh
-		println()
-		cancel()
-	}()
 
 	endpoints, err := opcua.GetEndpoints(ctx, endpoint)
 	if err != nil {
@@ -168,18 +157,10 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 
 	// 创建 WaitGroup 用于同步
 	wg := &sync.WaitGroup{}
-
 	// 启动子线程
-
 	// start callback-based subscription
 	wg.Add(1)
 	go startCallbackSub(ctx, m, 1, 0, wg, opctags...)
-
-	//wg.Add(1)
-	//go func() {
-	//	defer wg.Done() // 确保在函数退出时调用 Done()
-	//	startCallbackSub(ctx, m, 1, 1, rtdb, opctags...)
-	//}()
 
 	// 监听停止信号
 	select {
