@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	_ "ginElement/docs"
 	"ginElement/handlers"
@@ -18,12 +19,17 @@ import (
 )
 
 func main() {
-
+	var (
+		startWeb = flag.String("startweb", "1", "startWeb mode: 1, 0, Default: 1")
+	)
+	//flag.BoolVar(&debug.Enable, "debug", false, "enable debug logging")
+	flag.Parse()
 	err := handlers.EnsureDirExists("data")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
+	err = handlers.CheckDBAndDelete("data/rt.db")
 	// 初始化数据库连接
 	cfgdb, err := redka.Open("data/config.db", nil)
 	if err != nil {
@@ -54,6 +60,15 @@ func main() {
 		log.Println("write config.db err:", err2)
 		return
 	}
+	rid, _ := cfgdb.Hash().Get("system@router", "routerid")
+	newrid, _ := handlers.GetHardwareID()
+	if rid.String() == "" || rid.String() != newrid {
+		_, err3 := cfgdb.Hash().Set("system@router", "routerid", newrid)
+		if err3 != nil {
+			log.Println("write config.db err:", err2)
+			return
+		}
+	}
 
 	// 创建 Gin 引擎
 	r := gin.Default()
@@ -81,11 +96,15 @@ func main() {
 			startWorker(handlers.IotappMap[appconfig.AppCode], cfgdb, rtdb, appconfig.InstID)
 		}
 	}
-	url := "http://127.0.0.1:8880/swagger/index.html"
-	erra := openBrowser(url)
-	if erra != nil {
-		fmt.Printf("Failed to open browser: %s\n", erra)
+	startweb := *startWeb
+	if startweb == "1" {
+		url := "http://127.0.0.1:8880/swagger/index.html"
+		erra := openBrowser(url)
+		if erra != nil {
+			fmt.Printf("Failed to open browser: %s\n", erra)
+		}
 	}
+
 	// 启动WEB服务
 	fmt.Println("Server is running on :8880...")
 	err = r.Run(":8880")

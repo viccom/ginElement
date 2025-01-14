@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/nalgeon/redka"
+	"github.com/shirou/gopsutil/cpu"
 	"log"
 	"math/big"
 	"math/rand"
@@ -69,7 +72,7 @@ func toBase62(n *big.Int) string {
 }
 
 // 生成 16 位 Base62 ID
-func gen16ID() string {
+func Gen16ID() string {
 	// 生成 UUID
 	id := uuid.New()
 	// 将 UUID 转换为大整数
@@ -82,6 +85,39 @@ func gen16ID() string {
 		base62ID = base62ID[:16]
 	}
 	return base62ID
+}
+
+// GetHardwareID 生成一个基于CPU信息的唯一ID
+func GetHardwareID() (string, error) {
+	// 获取CPU信息
+	info, err := cpu.Info()
+	if err != nil {
+		return "", fmt.Errorf("无法获取CPU信息: %v", err)
+	}
+
+	if len(info) == 0 {
+		return "", fmt.Errorf("未找到CPU信息")
+	}
+
+	// 使用CPU的VendorID和ModelName生成哈希
+	hash := sha256.New()
+	hash.Write([]byte(info[0].VendorID + info[0].ModelName))
+	hashSum := hash.Sum(nil)
+
+	// 取哈希值的前16位作为ID
+	id := hex.EncodeToString(hashSum)[:16]
+
+	return id, nil
+}
+
+// ContainsString 检测字符串是否在字符串数组中
+func ContainsString(arr []string, target string) bool {
+	for _, item := range arr {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
 
 func ConvertToString(value interface{}) string {
@@ -144,6 +180,31 @@ func EnsureDirExists(dirName string) error {
 		}
 		log.Printf("Directory '%s' created successfully.\n", dirName)
 	}
+	return nil
+}
+
+// CheckDBAndDelete 检测文件是否存在，如果存在则删除
+func CheckDBAndDelete(path string) error {
+	// 检查文件是否存在
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// 文件不存在
+			return fmt.Errorf("文件 %s 不存在", path)
+		}
+		// 其他错误
+		return fmt.Errorf("检测文件 %s 时出错: %v", path, err)
+	}
+
+	// 文件存在，删除文件
+	err = os.Remove(path)
+	if err != nil {
+		return fmt.Errorf("删除文件 %s 时出错: %v", path, err)
+	}
+	os.Remove(path + "-shm")
+	os.Remove(path + "-wal")
+
+	fmt.Printf("文件 %s 已删除\n", path)
 	return nil
 }
 

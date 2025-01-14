@@ -114,7 +114,7 @@ func NewDev(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	// 生成一个新的16位 UUID
-	uuidstr := "DEV_" + gen16ID()
+	uuidstr := "DEV_" + Gen16ID()
 	devConfig.DevID = uuidstr
 	jsonstr, _ := json.Marshal(devConfig)
 	// 打印 anyConfig

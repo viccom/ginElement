@@ -34,7 +34,7 @@ type AppInfo struct {
 	AppCode string `json:"appCode"`
 }
 
-// @Summary 查询指定App的默认配置【未实现】
+// @Summary 查询指定App的默认配置
 // @Description 这是一个查询App默认配置信息的接口
 // @Tags APP Manager
 // @Accept json
@@ -148,7 +148,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 	}
 
 	// 生成一个新的16位 UUID
-	uuidstr := appConfig.AppCode + "@" + gen16ID()
+	uuidstr := appConfig.AppCode + "@" + Gen16ID()
 
 	appConfig.InstID = uuidstr
 	jsonstr, _ := json.Marshal(appConfig)
@@ -169,7 +169,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 	})
 }
 
-// @Summary 删除App实例【未实现】
+// @Summary 删除App实例
 // @Description 这是一个删除App实例的接口
 // @Tags APP Manager
 // @Accept json
@@ -371,7 +371,7 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 			workersLock.Lock()
 			delete(Workers, instid)
 			workersLock.Unlock()
-			fmt.Printf("StartApp提示：子线程退出,线程ID: %s 已从全局变量中删除\n", instid)
+			fmt.Printf("StartApp提示：Worker退出,线程ID: %s 已从全局变量中删除\n", instid)
 		}()
 		fn(instid, stopChan, cfgdb, rtdb) // 调用对应的函数
 	}()
@@ -420,7 +420,7 @@ func StopApp(c *gin.Context) {
 	// 检查全局变量 Workers 是否已删除对应的线程 ID
 	workersLock.Lock()
 	if _, cexists := Workers[instid]; !cexists {
-		fmt.Printf("StopApp提示：子线程 %s 已成功从全局变量中删除\n", instid)
+		fmt.Printf("StopApp提示：Worker %s 已成功从全局变量中删除\n", instid)
 	}
 	workersLock.Unlock()
 	// 返回成功消息

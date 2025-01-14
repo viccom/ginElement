@@ -50,6 +50,24 @@ var (
 			"autoStart": false,
 			"config":    "{}",
 		},
+		"mqttpub": {
+			"appCode":   "mqttpub",
+			"appType":   "toNorth",
+			"instId":    "",
+			"instName":  "mqttpub app",
+			"autoStart": false,
+			"config": map[string]any{
+				"broker":   "mqbroker.metme.top",
+				"port":     1883,
+				"username": "username",
+				"password": "password",
+				"cycle":    5,
+				"deviceList": []string{
+					"DEV_7JF3ZMbgvQfvAYpo",
+					"DEV_657ZMbgvQ4368Ypo",
+				},
+			},
+		},
 	}
 
 	tags_default = map[string]map[string]any{
