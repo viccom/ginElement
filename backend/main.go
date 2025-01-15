@@ -73,6 +73,13 @@ func main() {
 	// 创建 Gin 引擎
 	r := gin.Default()
 
+	// 设置静态文件服务，将静态文件目录映射到URL路径
+	r.Static("/html", "./html")
+
+	// 处理根URL请求，返回index.html
+	r.GET("/", func(c *gin.Context) {
+		c.File("./html/index.html")
+	})
 	// 调用 routes.SetupRouter，传递数据库连接
 	routes.SetupRouter(r, cfgdb, rtdb)
 
@@ -98,7 +105,7 @@ func main() {
 	}
 	startweb := *startWeb
 	if startweb == "1" {
-		url := "http://127.0.0.1:8880/swagger/index.html"
+		url := "http://localhost:8880"
 		erra := openBrowser(url)
 		if erra != nil {
 			fmt.Printf("Failed to open browser: %s\n", erra)

@@ -1,0 +1,96 @@
+<script lang="ts" setup>
+import axios from 'axios'
+import { onMounted, onUnmounted, ref } from 'vue'
+
+// 定义设备数据的类型
+interface DeviceData {
+  devName: string
+  devDesc: string
+  devId: string
+  instId: string
+}
+
+const props = defineProps<{
+  config: {
+    apiUrl: string
+  }
+}>()
+
+// 定义事件
+const emit = defineEmits(['data-click', 'point-click', 'delete-click'])
+
+// 定义 tableData 的类型为 DeviceData[]
+const tableData = ref<DeviceData[]>([])
+
+// 定义定时器 ID
+let intervalId: number | null = null
+
+// 获取数据的函数
+async function fetchData() {
+  try {
+    // 定义 POST 请求的请求体
+    const requestBody = {
+      instid: '',
+    }
+
+    // 发送 POST 请求
+    const response = await axios.post(props.config.apiUrl, requestBody, {
+      headers: {
+        'Content-Type': 'application/json', // 设置请求头为 JSON 格式
+      },
+    })
+
+    // 定义 data 的类型
+    const data: Record<string, DeviceData> = response.data.data
+
+    // 将响应数据赋值给 tableData
+    tableData.value = Object.values(data).map((item: DeviceData) => ({
+      devName: item.devName,
+      devDesc: item.devDesc,
+      devId: item.devId,
+      instId: item.instId,
+    }))
+  }
+  catch (error) {
+    console.error('加载表格数据失败:', error)
+  }
+}
+
+// 组件挂载时启动定时器
+onMounted(() => {
+  // 立即获取一次数据
+  fetchData()
+
+  // 每隔 3 秒获取一次数据
+  intervalId = setInterval(fetchData, 3000)
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+})
+</script>
+
+<template>
+  <el-table :data="tableData" style="width: 100%">
+    <el-table-column prop="devName" label="设备名称" />
+    <el-table-column prop="devDesc" label="设备描述" />
+    <el-table-column prop="devId" label="设备ID" />
+    <el-table-column prop="instId" label="实例ID" />
+    <el-table-column label="操作" width="200">
+      <template #default="scope">
+        <el-button size="small" type="info" @click="emit('data-click', scope.row.devName, scope.row.devId, scope.row.devId, scope.row.instId)">
+          数据
+        </el-button>
+        <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devId, scope.row.devId, scope.row.instId)">
+          点表
+        </el-button>
+        <el-button size="small" type="danger" @click="emit('delete-click', scope.row.devName, scope.row.devId)">
+          删除
+        </el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+</template>

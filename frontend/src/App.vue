@@ -4,7 +4,6 @@
     <div class="main-container flex">
       <BaseSide />
       <div w="full" py="4">
-        <BaseBreadcrumb />
         <RouterView />
       </div>
     </div>

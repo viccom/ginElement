@@ -1,11 +1,11 @@
 import path from 'node:path'
-import Vue from '@vitejs/plugin-vue'
 
+import Vue from '@vitejs/plugin-vue'
 import Unocss from 'unocss/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
-import VueRouter from 'unplugin-vue-router/vite'
 
+import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
@@ -58,11 +58,19 @@ export default defineConfig({
   },
 
   server: {
-    port: 3000, // 开发服务器端口
+    proxy: {
+      // 代理所有以 /api 开头的请求
+      '/api': {
+        target: 'http://127.0.0.1:8880', // 后端服务地址
+        changeOrigin: true, // 允许跨域
+        rewrite: path => path.replace(/^\/api/, '/api'), // 保留 /api
+      },
+    },
+    port: 3330, // 开发服务器端口
     open: true, // 自动打开浏览器
   },
   build: {
-    outDir: '../debug/html', // 编译输出目录
+    outDir: '../backend/debug/html', // 编译输出目录
     assetsDir: 'assets', // 静态资源目录
   },
 })

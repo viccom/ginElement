@@ -1,7 +1,10 @@
 <script lang="ts" setup>
+import { ref } from 'vue'
 import { repository } from '~/../package.json'
-
 import { toggleDark } from '~/composables'
+
+// 定义响应式数据
+const apiDocUrl = ref('/swagger/index.html')
 </script>
 
 <template>
@@ -9,12 +12,14 @@ import { toggleDark } from '~/composables'
     <el-menu-item index="/">
       <div class="flex items-center justify-center gap-2">
         <div class="text-xl" i-ep-element-plus />
-        <span>Element Plus</span>
+        <span>GoIOT</span>
       </div>
     </el-menu-item>
 
-    <el-menu-item index="12" >
-      Api
+    <el-menu-item index="12">
+      <a class="size-full flex items-center justify-center" :href="apiDocUrl" target="_blank">
+        API文档
+      </a>
     </el-menu-item>
 
     <el-menu-item index="13">
