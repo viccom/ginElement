@@ -75,6 +75,10 @@ func main() {
 
 	// 设置静态文件服务，将静态文件目录映射到URL路径
 	r.Static("/html", "./html")
+	r.StaticFile("/favicon.svg", "./html/favicon.svg")
+	r.StaticFile("/vite.svg", "./html/vite.svg")
+	r.StaticFile("/element-plus-logo-small.svg", "./html/element-plus-logo-small.svg")
+	r.Static("/assets", "./html/assets")
 
 	// 处理根URL请求，返回index.html
 	r.GET("/", func(c *gin.Context) {

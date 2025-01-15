@@ -17,7 +17,7 @@ const apiDocUrl = ref('/swagger/index.html')
     </el-menu-item>
 
     <el-menu-item index="12">
-      <a class="size-full flex items-center justify-center" :href="apiDocUrl" target="_blank">
+      <a class="size-full flex items-center justify-center no-underline" :href="apiDocUrl" target="_blank">
         API文档
       </a>
     </el-menu-item>
@@ -46,6 +46,11 @@ const apiDocUrl = ref('/swagger/index.html')
 .el-menu-demo {
   &.ep-menu--horizontal > .ep-menu-item:nth-child(1) {
     margin-right: auto;
+  }
+
+  // 添加以下规则以去掉超链接下划线
+  .no-underline {
+    text-decoration: none;
   }
 }
 </style>
