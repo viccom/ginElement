@@ -61,7 +61,20 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 		})
 		return
 	}
-	OutterMap := make(map[string]DevConfig)
+
+	workersLock.Lock()
+	defer workersLock.Unlock()
+
+	// 获取所有子线程的 ID
+	ids := make([]string, 0, len(Workers))
+	for id := range Workers {
+		ids = append(ids, id)
+	}
+	type NewConfig struct {
+		DevConfig      // 嵌入 AppConfig 结构体
+		IsRunning bool `json:"isRunning"` // 新增字段
+	}
+	OutterMap := make(map[string]NewConfig)
 	for key, value := range values {
 		var newValue DevConfig
 		erra := json.Unmarshal([]byte(value.String()), &newValue)
@@ -70,10 +83,21 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 			return
 		}
 		fmt.Printf("键: %s, 值: %s\n", key, instid)
+		if !contains(ids, newValue.InstID) {
+			continue
+		}
 		if instid == "" {
-			OutterMap[key] = newValue
+			newData := NewConfig{
+				DevConfig: newValue,
+				IsRunning: true, // 设置新增的 Status 字段
+			}
+			OutterMap[key] = newData
 		} else if instid == newValue.InstID {
-			OutterMap[key] = newValue
+			newData := NewConfig{
+				DevConfig: newValue,
+				IsRunning: true, // 设置新增的 Status 字段
+			}
+			OutterMap[key] = newData
 		}
 	}
 	if len(OutterMap) == 0 {

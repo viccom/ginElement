@@ -18,6 +18,7 @@ var (
 	workersLock sync.Mutex                       // 用于保护 Workers 的并发访问
 	//nextID      = 1                              // 用于生成唯一的子线程 ID
 
+	//devsStatus = make(map[string]bool) // 存储所有设备ID的在线状态
 	// 定义redka数据库中的表名
 	InstListKey  = "inst@router"
 	DevAtInstKey = "dev@inst"

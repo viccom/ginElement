@@ -28,6 +28,8 @@ interface TagData {
   utc: number
 }
 
+const search = ref('') // 搜索关键字
+
 // 定义 tableData 的类型为 TagData[]
 const tableData = ref<TagData[]>([])
 
@@ -85,12 +87,27 @@ onUnmounted(() => {
     clearInterval(intervalId)
   }
 })
+
+// 排序函数
+function sortTimeStr(a: TagData, b: TagData) {
+  return new Date(a.timeStr).getTime() - new Date(b.timeStr).getTime()
+}
 </script>
 
 <template>
   <div class="container">
     <el-row :gutter="20">
-      <el-col :span="5">
+      <el-col :span="2">
+        <div>
+          <el-input
+            v-model="search"
+            placeholder="请输入点名过滤"
+            clearable
+          />
+        </div>
+      </el-col>
+
+      <el-col :span="4">
         <div>
           <el-input
             v-model="devName"
@@ -104,7 +121,7 @@ onUnmounted(() => {
           </el-input>
         </div>
       </el-col>
-      <el-col :span="5">
+      <el-col :span="4">
         <div>
           <el-input
             v-model="devDesc"
@@ -154,9 +171,21 @@ onUnmounted(() => {
         </div>
       </el-col>
     </el-row>
-    <el-table :data="tableData" style="width: 96%">
+
+    <!-- 搜索框 -->
+
+    <!-- 表格 -->
+    <el-table :data="tableData.filter(data => !search || data.tagName.includes(search))" style="width: 96%">
+      <!-- 第1列：名称 -->
       <el-table-column prop="tagName" label="名称" />
-      <el-table-column prop="timeStr" label="时间" />
+      <!-- 第2列：时间（支持排序） -->
+      <el-table-column
+        prop="timeStr"
+        label="时间"
+        sortable
+        :sort-method="sortTimeStr"
+      />
+      <!-- 第3列：数值 -->
       <el-table-column prop="value" label="数值" />
     </el-table>
   </div>
