@@ -4,7 +4,6 @@ import Vue from '@vitejs/plugin-vue'
 import Unocss from 'unocss/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
-
 import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
 
@@ -26,11 +25,12 @@ export default defineConfig({
   },
 
   plugins: [
-    Vue(),
-
+    Vue({
+      include: [/\.vue$/, /\.md$/],
+    }),
     // https://github.com/posva/unplugin-vue-router
     VueRouter({
-      extensions: ['.vue', '.md'],
+      extensions: ['.vue'],
       dts: 'src/typed-router.d.ts',
     }),
 
@@ -65,7 +65,13 @@ export default defineConfig({
         changeOrigin: true, // 允许跨域
         rewrite: path => path.replace(/^\/api/, '/api'), // 保留 /api
       },
+      // 代理 Swagger UI 的所有资源
+      '/swagger': {
+        target: 'http://localhost:8880', // 后端服务地址
+        changeOrigin: true, // 允许跨域
+      },
     },
+
     port: 3330, // 开发服务器端口
     open: true, // 自动打开浏览器
   },

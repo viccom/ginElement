@@ -1,121 +1,201 @@
-<script>
+<script lang="ts" setup>
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref } from 'vue'
+import AppEditor from './0_components/AppEditor.vue'
+import AppList from './0_components/AppList.vue'
 
-export default {
-  setup() {
-    const activeTab = ref('tab1')
-    const tableData = ref([])
+// 定义标签页类型
+type TabType = 'appList' | 'appEditor'
 
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`/api/v1/listApps?t=${Date.now()}`, {
-          headers: { accept: 'application/json' },
-        })
-        const data = response.data.data
-        tableData.value = Object.values(data).map(item => ({
-          instName: item.instName,
-          instId: item.instId,
-          appCode: item.appCode,
-          appType: item.appType,
-          autoStart: item.autoStart,
-        }))
-        // eslint-disable-next-line no-console
-        // console.log('tableData:', tableData.value) // 打印数据以验证
-      }
-      catch (error) {
-        console.error('获取数据失败:', error)
-      }
+// 定义 Tab 接口
+interface Tab {
+  title: string
+  name: string
+  type: TabType
+  config: {
+    apiUrl: string
+  }
+  jsonApp: {
+    instName: string
+    instId: string
+    isRunning: boolean
+  }
+}
+
+// 动态组件映射
+const componentMap = {
+  appList: AppList,
+  appEditor: AppEditor,
+}
+
+// 定义 activeTab 和 tabs
+const activeTab = ref('1')
+const tabs = ref<Tab[]>([
+  {
+    title: '应用列表',
+    name: '1',
+    type: 'appList',
+    config: {
+      apiUrl: `/api/v1/listApps?t=${Date.now()}`,
+    },
+    jsonApp: {
+      instName: '',
+      instId: '',
+      isRunning: false,
+    },
+  },
+])
+
+// 添加新标签页
+function addTab(title: string, type: TabType, config: { apiUrl: string }, jsonApp: { instName: string, instId: string, isRunning: boolean }) {
+  const newTabName = `${tabs.value.length + 1}`
+  const anewTab = {
+    title,
+    name: newTabName,
+    type,
+    config,
+    jsonApp,
+  }
+  tabs.value.push(anewTab)
+  activeTab.value = newTabName
+}
+
+// 处理标签页关闭
+function handleTabsEdit(targetName: string) {
+  if (targetName === tabs.value[0].name) {
+    console.log('最左边的标签页不允许关闭')
+    return
+  }
+  const targetIndex = tabs.value.findIndex((tab: Tab) => tab.name === targetName)
+  if (targetIndex !== -1) {
+    tabs.value.splice(targetIndex, 1)
+    if (activeTab.value === targetName) {
+      activeTab.value = tabs.value[0]?.name || ''
     }
+  }
+}
 
-    const handleDetail = (row) => {
-      // eslint-disable-next-line no-console
-      console.log('详情:', row)
-    }
+// 处理“编辑”按钮点击事件
+function handleEditClick(instName: string, instId: string) {
+  const tabName = `编辑[${instName}]`
+  addTab(tabName, 'appEditor', {
+    apiUrl: `/api/v1/getApp`,
+  }, {
+    instName,
+    instId,
+    isRunning: false,
+  })
+}
 
-    const handleStart = (row) => {
-      // eslint-disable-next-line no-console
-      console.log('启动:', row)
-    }
+// 处理“启动”按钮点击事件
+async function handleStartClick(instName: string, instId: string) {
+  const currentTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
+  if (currentTab && currentTab.jsonApp.isRunning) {
+    ElMessage.warning(`${instName} (ID: ${instId}) 已经启动`)
+    return
+  }
 
-    const handleStop = (row) => {
-      // eslint-disable-next-line no-console
-      console.log('停止:', row)
-    }
-
-    const handleDelete = (row) => {
-      // eslint-disable-next-line no-console
-      console.log('删除:', row)
-    }
-
-    onMounted(() => {
-      fetchData()
+  try {
+    const response = await axios.post('/api/v1/startApp', {
+      instid: instId,
     })
 
-    return {
-      activeTab,
-      tableData,
-      handleDetail,
-      handleStart,
-      handleStop,
-      handleDelete,
+    if (response.data.data) {
+      ElMessage.success(`启动成功: ${instName} (ID: ${instId})`)
+      // 更新 isRunning 状态
+      const targetTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
+      if (targetTab) {
+        targetTab.jsonApp.isRunning = true
+      }
     }
-  },
+    else {
+      ElMessage.error(`启动失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`启动失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+}
+
+// 处理“停止”按钮点击事件
+async function handleStopClick(instName: string, instId: string) {
+  const currentTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
+  if (currentTab && !currentTab.jsonApp.isRunning) {
+    ElMessage.warning(`${instName} (ID: ${instId}) 已经停止`)
+    return
+  }
+
+  try {
+    const response = await axios.post('/api/v1/stopApp', {
+      instid: instId,
+    })
+
+    if (response.data.data) {
+      ElMessage.success(`停止成功: ${instName} (ID: ${instId})`)
+      // 更新 isRunning 状态
+      const targetTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
+      if (targetTab) {
+        targetTab.jsonApp.isRunning = false
+      }
+    }
+    else {
+      ElMessage.error(`停止失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`停止失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+}
+
+// 处理“删除”按钮点击事件
+function handleDeleteClick(instName: string, instId: string) {
+  ElMessageBox.alert(`删除：应用名称=${instName}，应用ID=${instId}`, '提示', {
+    confirmButtonText: '确定',
+  })
+}
+
+// 处理关闭标签页事件
+function handleCloseTab() {
+  handleTabsEdit(activeTab.value)
 }
 </script>
 
 <template>
-  <div>
-    <el-tabs v-model="activeTab" type="card">
-      <el-tab-pane label="标签页 1" name="tab1">
-        <!-- 新增按钮和表格的容器 -->
-        <div class="table-header">
-          <el-button type="primary" @click="handleAddInstance">
-            新增实例
-          </el-button>
-        </div>
-        <el-table :data="tableData" style="width: 100%">
-          <el-table-column prop="instName" label="实例名称" width="180" />
-          <el-table-column prop="instId" label="实例ID" width="280" />
-          <el-table-column prop="appCode" label="应用代码" width="160" />
-          <el-table-column prop="appType" label="应用类型" width="160" />
-          <el-table-column prop="autoStart" label="自启动" width="120">
-            <template #default="scope">
-              <el-tag :type="scope.row.autoStart ? 'success' : 'danger'">
-                {{ scope.row.autoStart ? '是' : '否' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="280">
-            <template #default="scope">
-              <el-button size="small" @click="handleDetail(scope.row)">
-                详情
-              </el-button>
-              <el-button size="small" type="success" @click="handleStart(scope.row)">
-                启动
-              </el-button>
-              <el-button size="small" type="warning" @click="handleStop(scope.row)">
-                停止
-              </el-button>
-              <el-button size="small" type="danger" @click="handleDelete(scope.row)">
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-          <el-table-column width="0" />
-        </el-table>
-      </el-tab-pane>
-
-    </el-tabs>
-  </div>
+  <el-tabs
+    v-model="activeTab"
+    type="card"
+    editable
+    class="demo-tabs"
+    @tab-remove="handleTabsEdit"
+  >
+    <el-tab-pane
+      v-for="(tab, index) in tabs"
+      :key="tab.name"
+      :label="tab.title"
+      :name="tab.name"
+      :closable="index !== 0"
+    >
+      <!-- 动态加载组件 -->
+      <component
+        :is="componentMap[tab.type]"
+        :config="tab.config"
+        :json-app="tab.jsonApp"
+        @edit-click="handleEditClick"
+        @start-click="handleStartClick"
+        @stop-click="handleStopClick"
+        @delete-click="handleDeleteClick"
+        @close-tab="handleCloseTab"
+      />
+    </el-tab-pane>
+  </el-tabs>
 </template>
 
-<style scoped>
-/* 你可以在这里添加一些自定义样式 */
-/* 按钮和表格的布局 */
-.table-header {
-  display: flex;
-  justify-content: flex-start; /* 按钮靠右 */
-  margin-bottom: 16px; /* 按钮和表格之间的间距 */
+<style>
+.demo-tabs > .el-tabs__content {
+  padding: 32px;
+  color: #6b778c;
+  font-size: 32px;
+  font-weight: 600;
 }
 </style>

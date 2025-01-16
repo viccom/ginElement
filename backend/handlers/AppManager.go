@@ -94,7 +94,19 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 		})
 		return
 	}
-	OutterMap := make(map[string]AppConfig)
+	workersLock.Lock()
+	defer workersLock.Unlock()
+
+	// 获取所有子线程的 ID
+	ids := make([]string, 0, len(Workers))
+	for id := range Workers {
+		ids = append(ids, id)
+	}
+	type NewConfig struct {
+		AppConfig      // 嵌入 AppConfig 结构体
+		IsRunning bool `json:"isRunning"` // 新增字段
+	}
+	OutterMap := make(map[string]NewConfig)
 	for key, value := range values {
 		var newValue AppConfig
 		erra := json.Unmarshal([]byte(value.String()), &newValue)
@@ -102,8 +114,17 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 			fmt.Println("Error unmarshalling JSON:", erra)
 			return
 		}
+
+		var isRunning bool
+		if contains(ids, key) {
+			isRunning = true
+		}
+		config := NewConfig{
+			AppConfig: newValue,
+			IsRunning: isRunning, // 设置新增的 Status 字段
+		}
 		//fmt.Printf("键: %s, 值: %s\n", key, newValue)
-		OutterMap[key] = newValue
+		OutterMap[key] = config
 	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{

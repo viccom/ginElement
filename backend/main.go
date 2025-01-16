@@ -20,7 +20,7 @@ import (
 
 func main() {
 	var (
-		startWeb = flag.String("startweb", "1", "startWeb mode: 1, 0, Default: 1")
+		startWeb = flag.String("startweb", "0", "startWeb mode: 1, 0, Default: 1")
 	)
 	//flag.BoolVar(&debug.Enable, "debug", false, "enable debug logging")
 	flag.Parse()
@@ -79,6 +79,7 @@ func main() {
 	r.StaticFile("/vite.svg", "./html/vite.svg")
 	r.StaticFile("/element-plus-logo-small.svg", "./html/element-plus-logo-small.svg")
 	r.Static("/assets", "./html/assets")
+	r.Static("/md", "./html/md")
 
 	// 处理根URL请求，返回index.html
 	r.GET("/", func(c *gin.Context) {

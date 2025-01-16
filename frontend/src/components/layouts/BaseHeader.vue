@@ -5,6 +5,11 @@ import { toggleDark } from '~/composables'
 
 // 定义响应式数据
 const apiDocUrl = ref('/swagger/index.html')
+
+// 定义方法
+function openAboutPage() {
+  window.open(apiDocUrl.value, '_blank')
+}
 </script>
 
 <template>
@@ -16,13 +21,13 @@ const apiDocUrl = ref('/swagger/index.html')
       </div>
     </el-menu-item>
 
-    <el-menu-item index="12">
-      <a class="size-full flex items-center justify-center no-underline" :href="apiDocUrl" target="_blank">
+    <el-menu-item>
+      <a class="size-full flex items-center justify-center no-underline" @click="openAboutPage">
         API文档
       </a>
     </el-menu-item>
 
-    <el-menu-item index="13">
+    <el-menu-item index="/help/1">
       Help
     </el-menu-item>
 
