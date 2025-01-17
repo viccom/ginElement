@@ -1,5 +1,5 @@
 <template>
   <div>
-    Navigation 2
+    推送列表
   </div>
 </template>
