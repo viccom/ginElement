@@ -77,7 +77,13 @@ onUnmounted(() => {
     <el-table-column prop="instName" label="名称" />
     <el-table-column prop="instId" label="ID" />
     <el-table-column prop="appCode" label="编码" />
-    <el-table-column prop="appType" label="appType" />
+    <el-table-column prop="appType" label="appType">
+      <template #default="scope">
+        <el-tag :type="scope.row.appType === 'toSouth' ? 'info' : 'text'">
+          {{ scope.row.appType === 'toSouth' ? '南向' : '北向' }}
+        </el-tag>
+      </template>
+    </el-table-column>
     <el-table-column prop="autoStart" label="自启动">
       <template #default="scope">
         <el-switch v-model="scope.row.autoStart" />
@@ -103,10 +109,10 @@ onUnmounted(() => {
         <el-button size="small" type="primary" @click="emit('edit-click', scope.row.instName, scope.row.instId)">
           编辑
         </el-button>
-        <el-button size="small" type="success" @click="emit('start-click', scope.row.instName, scope.row.instId)">
+        <el-button size="small" type="success" @click="emit('start-click', scope.row.instName, scope.row.instId, scope.row.isRunning)">
           启动
         </el-button>
-        <el-button size="small" type="warning" @click="emit('stop-click', scope.row.instName, scope.row.instId)">
+        <el-button size="small" type="warning" @click="emit('stop-click', scope.row.instName, scope.row.instId, scope.row.isRunning)">
           停止
         </el-button>
         <el-button size="small" type="danger" @click="emit('delete-click', scope.row.instName, scope.row.instId)">

@@ -8,6 +8,7 @@ interface DeviceData {
   devDesc: string
   devId: string
   instId: string
+  isRunning: boolean | null // 允许 isRunning 为 null,
 }
 
 const props = defineProps<{
@@ -49,6 +50,7 @@ async function fetchData() {
       devDesc: item.devDesc,
       devId: item.devId,
       instId: item.instId,
+      isRunning: item.isRunning,
     }))
   }
   catch (error) {
@@ -78,13 +80,28 @@ onUnmounted(() => {
     <el-table-column prop="devName" label="设备名称" />
     <el-table-column prop="devDesc" label="设备描述" />
     <el-table-column prop="devId" label="设备ID" />
-    <el-table-column prop="instId" label="实例ID" />
+    <el-table-column prop="instId" label="宿主ID" />
+    <el-table-column label="宿主状态">
+      <template #default="scope">
+        <el-tag
+            :type="
+            scope.row.isRunning === true
+              ? 'success'
+              : scope.row.isRunning === false
+                ? 'danger'
+                : 'info'
+          "
+        >
+          {{ scope.row.isRunning === true ? '运行' : scope.row.isRunning === false ? '停止' : '未知' }}
+        </el-tag>
+      </template>
+    </el-table-column>
     <el-table-column label="操作" width="200">
       <template #default="scope">
         <el-button size="small" type="info" @click="emit('data-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)">
           数据
         </el-button>
-        <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)">
+        <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devId, scope.row.devDesc, scope.row.instId)">
           点表
         </el-button>
         <el-button size="small" type="danger" @click="emit('delete-click', scope.row.devName, scope.row.devId)">

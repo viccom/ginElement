@@ -2,6 +2,7 @@
 import { Refresh } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { onMounted, onUnmounted, ref } from 'vue'
+import { ElMessage } from 'element-plus' // 引入 ElMessage 用于显示提示信息
 
 const props = defineProps<{
   config: {
@@ -92,6 +93,26 @@ onUnmounted(() => {
 function sortTimeStr(a: TagData, b: TagData) {
   return new Date(a.timeStr).getTime() - new Date(b.timeStr).getTime()
 }
+
+// 处理“历史”按钮点击事件
+function handleHistoryClick(tagName: string) {
+  ElMessage({
+    message: `${tagName} 历史暂未实现`,
+    type: 'info',
+    duration: 3000, // 3 秒后消失
+    center: true, // 提示信息居中
+  })
+}
+
+// 处理“下置”按钮点击事件
+function handleSetValueClick(tagName: string) {
+  ElMessage({
+    message: `${tagName} 下置暂未实现`,
+    type: 'info',
+    duration: 3000, // 3 秒后消失
+    center: true, // 提示信息居中
+  })
+}
 </script>
 
 <template>
@@ -100,9 +121,9 @@ function sortTimeStr(a: TagData, b: TagData) {
       <el-col :span="2">
         <div>
           <el-input
-            v-model="search"
-            placeholder="请输入点名过滤"
-            clearable
+              v-model="search"
+              placeholder="请输入点名过滤"
+              clearable
           />
         </div>
       </el-col>
@@ -110,10 +131,10 @@ function sortTimeStr(a: TagData, b: TagData) {
       <el-col :span="4">
         <div>
           <el-input
-            v-model="devName"
-            style="max-width: 100%"
-            disabled
-            placeholder="Please input"
+              v-model="devName"
+              style="max-width: 100%"
+              disabled
+              placeholder="Please input"
           >
             <template #prepend>
               名称：
@@ -124,10 +145,10 @@ function sortTimeStr(a: TagData, b: TagData) {
       <el-col :span="4">
         <div>
           <el-input
-            v-model="devDesc"
-            style="max-width: 100%"
-            disabled
-            placeholder="Please input"
+              v-model="devDesc"
+              style="max-width: 100%"
+              disabled
+              placeholder="Please input"
           >
             <template #prepend>
               描述：
@@ -138,10 +159,10 @@ function sortTimeStr(a: TagData, b: TagData) {
       <el-col :span="5">
         <div>
           <el-input
-            v-model="devId"
-            style="max-width: 100%"
-            disabled
-            placeholder="Please input"
+              v-model="devId"
+              style="max-width: 100%"
+              disabled
+              placeholder="Please input"
           >
             <template #prepend>
               设备ID：
@@ -152,10 +173,10 @@ function sortTimeStr(a: TagData, b: TagData) {
       <el-col :span="5">
         <div>
           <el-input
-            v-model="instId"
-            style="max-width: 100%"
-            disabled
-            placeholder="Please input"
+              v-model="instId"
+              style="max-width: 100%"
+              disabled
+              placeholder="Please input"
           >
             <template #prepend>
               实例：
@@ -172,21 +193,30 @@ function sortTimeStr(a: TagData, b: TagData) {
       </el-col>
     </el-row>
 
-    <!-- 搜索框 -->
-
     <!-- 表格 -->
     <el-table :data="tableData.filter(data => !search || data.tagName.includes(search))" style="width: 96%">
       <!-- 第1列：名称 -->
       <el-table-column prop="tagName" label="名称" />
       <!-- 第2列：时间（支持排序） -->
       <el-table-column
-        prop="timeStr"
-        label="时间"
-        sortable
-        :sort-method="sortTimeStr"
+          prop="timeStr"
+          label="时间"
+          sortable
+          :sort-method="sortTimeStr"
       />
       <!-- 第3列：数值 -->
       <el-table-column prop="value" label="数值" />
+      <!-- 第4列：操作 -->
+      <el-table-column label="操作" width="200">
+        <template #default="scope">
+          <el-button size="small" type="primary" @click="handleHistoryClick(scope.row.tagName)">
+            历史
+          </el-button>
+          <el-button size="small" type="success" @click="handleSetValueClick(scope.row.tagName)">
+            下置
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
   </div>
 </template>

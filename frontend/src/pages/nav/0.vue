@@ -49,16 +49,26 @@ const tabs = ref<Tab[]>([
 
 // 添加新标签页
 function addTab(title: string, type: TabType, config: { apiUrl: string }, jsonApp: { instName: string, instId: string, isRunning: boolean }) {
-  const newTabName = `${tabs.value.length + 1}`
-  const anewTab = {
-    title,
-    name: newTabName,
-    type,
-    config,
-    jsonApp,
+  // 检查是否已存在相同 title 的标签页
+  const existingTab = tabs.value.find(tab => tab.title === title)
+
+  if (existingTab) {
+    // 如果存在，则激活该标签页
+    activeTab.value = existingTab.name
   }
-  tabs.value.push(anewTab)
-  activeTab.value = newTabName
+  else {
+    // 如果不存在，则创建新标签页
+    const newTabName = `${tabs.value.length + 1}`
+    const newTab = {
+      title,
+      name: newTabName,
+      type,
+      config,
+      jsonApp,
+    }
+    tabs.value.push(newTab)
+    activeTab.value = newTabName
+  }
 }
 
 // 处理标签页关闭
@@ -89,9 +99,8 @@ function handleEditClick(instName: string, instId: string) {
 }
 
 // 处理“启动”按钮点击事件
-async function handleStartClick(instName: string, instId: string) {
-  const currentTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
-  if (currentTab && currentTab.jsonApp.isRunning) {
+async function handleStartClick(instName: string, instId: string, isRunning: boolean) {
+  if (isRunning) {
     ElMessage.warning(`${instName} (ID: ${instId}) 已经启动`)
     return
   }
@@ -119,9 +128,9 @@ async function handleStartClick(instName: string, instId: string) {
 }
 
 // 处理“停止”按钮点击事件
-async function handleStopClick(instName: string, instId: string) {
-  const currentTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
-  if (currentTab && !currentTab.jsonApp.isRunning) {
+async function handleStopClick(instName: string, instId: string, isRunning: boolean) {
+  console.log(isRunning)
+  if (!isRunning) {
     ElMessage.warning(`${instName} (ID: ${instId}) 已经停止`)
     return
   }

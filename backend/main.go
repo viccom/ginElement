@@ -9,7 +9,9 @@ import (
 	"ginElement/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/nalgeon/redka"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 
 	swaggerFiles "github.com/swaggo/files"     // 用于提供 Swagger UI 静态文件
@@ -24,14 +26,35 @@ func main() {
 	)
 	//flag.BoolVar(&debug.Enable, "debug", false, "enable debug logging")
 	flag.Parse()
-	err := handlers.EnsureDirExists("data")
+
+	// 获取当前可执行文件的路径
+	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println("Failed to get executable path:", err)
+		return
+	}
+
+	// 获取可执行文件所在的目录
+	exeDir := filepath.Dir(exePath)
+
+	// 切换工作路径到可执行文件所在目录
+	err = os.Chdir(exeDir)
+	if err != nil {
+		fmt.Println("Failed to change working directory:", err)
+		return
+	}
+
+	errx := handlers.EnsureDirExists("data")
+	if errx != nil {
+		fmt.Printf("Error: %v\n", errx)
 		return
 	}
 	err = handlers.CheckDBAndDelete("data/rt.db")
 	// 初始化数据库连接
-	cfgdb, err := redka.Open("data/config.db", nil)
+	opts := redka.Options{
+		DriverName: "sqlite",
+	}
+	cfgdb, err := redka.Open("data/config.db", &opts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +67,7 @@ func main() {
 	//	},
 	//}
 
-	rtdb, err := redka.Open("data/rt.db", nil)
+	rtdb, err := redka.Open("data/rt.db", &opts)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file:/rt.db?vfs=memdb", nil)
 	// All data is lost when the database is closed.

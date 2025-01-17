@@ -54,16 +54,26 @@ const tabs = ref<Tab[]>([
 
 // 添加新标签页
 function addTab(title: string, type: TabType, config: { apiUrl: string }, jsonDev: { devName: string, devDesc: string, devId: string, instId: string }) {
-  const newTabName = `${tabs.value.length + 1}`
-  const newTab = {
-    title,
-    name: newTabName,
-    type,
-    config,
-    jsonDev,
+  // 检查是否已存在相同 title 的标签页
+  const existingTab = tabs.value.find(tab => tab.title === title)
+
+  if (existingTab) {
+    // 如果存在，则激活该标签页
+    activeTab.value = existingTab.name
   }
-  tabs.value.push(newTab)
-  activeTab.value = newTabName
+  else {
+    // 如果不存在，则创建新标签页
+    const newTabName = `${tabs.value.length + 1}`
+    const newTab = {
+      title,
+      name: newTabName,
+      type,
+      config,
+      jsonDev,
+    }
+    tabs.value.push(newTab)
+    activeTab.value = newTabName
+  }
 }
 
 // 处理标签页关闭
@@ -92,22 +102,21 @@ function handleDataClick(devName: string, devDesc: string, devId: string, instId
     devId,
     instId,
   })
-  // ElMessageBox.alert(`已创建新标签页：${tabName}，devId：${devId}`, '提示', {
-  //   confirmButtonText: '确定',
-  // })
 }
 
 // 处理“点表”按钮点击事件
 function handlePointClick(devName: string, devId: string) {
-  ElMessageBox.alert(`点表：设备名称=${devName}，设备ID=${devId}`, '提示', {
+  ElMessageBox.alert(`设备点表：<br>设备名称=${devName}<br>设备ID=${devId}`, '提示', {
     confirmButtonText: '确定',
+    dangerouslyUseHTMLString: true, // 允许使用 HTML 字符串
   })
 }
 
 // 处理“删除”按钮点击事件
 function handleDeleteClick(devName: string, devId: string) {
-  ElMessageBox.alert(`删除：设备名称=${devName}，设备ID=${devId}`, '提示', {
+  ElMessageBox.alert(`删除设备：<br>设备名称=${devName}<br>设备ID=${devId}`, '提示', {
     confirmButtonText: '确定',
+    dangerouslyUseHTMLString: true, // 允许使用 HTML 字符串
   })
 }
 </script>

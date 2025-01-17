@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nalgeon/redka"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/simonvetter/modbus"
 	"log"
+	_ "modernc.org/sqlite"
 	"strconv"
 	"time"
 )
