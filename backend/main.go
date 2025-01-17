@@ -60,19 +60,19 @@ func main() {
 	}
 	defer cfgdb.Close()
 
-	//opts := redka.Options{
+	//rtopts := redka.Options{
 	//	DriverName: "sqlite3",
 	//	Pragma: map[string]string{
 	//		"temp_store": "memory",
 	//	},
 	//}
 
-	rtdb, err := redka.Open("data/rt.db", &opts)
+	//rtdb, err := redka.Open("data/rt.db", &opts)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file:/rt.db?vfs=memdb", nil)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file::memory:?cache=shared", nil)
-	//rtdb, err := redka.Open("file:redka?mode=memory&cache=shared", nil)
+	rtdb, err := redka.Open("file:redka?mode=memory&cache=shared", &opts)
 	if err != nil {
 		log.Fatal(err)
 	}

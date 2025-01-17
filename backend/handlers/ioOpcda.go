@@ -1,8 +1,9 @@
+//go:build windows
+
 package handlers
 
 import (
 	"encoding/json"
-	//"encoding/json"
 	"fmt"
 	"github.com/huskar-t/opcda"
 	"github.com/huskar-t/opcda/com"
