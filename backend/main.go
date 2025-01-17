@@ -23,6 +23,7 @@ import (
 func main() {
 	var (
 		startWeb = flag.String("startweb", "0", "startWeb mode: 1, 0, Default: 1")
+		port     = flag.String("port", "8880", "listen port, Default: 8880")
 	)
 	//flag.BoolVar(&debug.Enable, "debug", false, "enable debug logging")
 	flag.Parse()
@@ -142,7 +143,7 @@ func main() {
 
 	// 启动WEB服务
 	fmt.Println("Server is running on :8880...")
-	err = r.Run(":8880")
+	err = r.Run(":" + *port)
 	if err != nil {
 		return
 	}
