@@ -37,7 +37,7 @@ const componentMap = {
 const activeTab = ref('1')
 const tabs = ref<Tab[]>([
   {
-    title: '设备列表',
+    title: '总览',
     name: '1',
     type: 'devs',
     config: {
@@ -122,6 +122,9 @@ function handleDeleteClick(devName: string, devId: string) {
 </script>
 
 <template>
+  <div>
+    设备列表
+  </div>
   <el-tabs
     v-model="activeTab"
     type="card"

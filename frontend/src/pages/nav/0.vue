@@ -33,7 +33,7 @@ const componentMap = {
 const activeTab = ref('1')
 const tabs = ref<Tab[]>([
   {
-    title: '应用列表',
+    title: '总览',
     name: '1',
     type: 'appList',
     config: {
@@ -171,6 +171,9 @@ function handleCloseTab() {
 </script>
 
 <template>
+  <div>
+    应用列表
+  </div>
   <el-tabs
     v-model="activeTab"
     type="card"
