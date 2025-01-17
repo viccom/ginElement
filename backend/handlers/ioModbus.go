@@ -166,7 +166,9 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				return
 			}
 			// 遍历切片中的每个 map
-			now := time.Now()
+			loc, _ := time.LoadLocation("Local")
+			// 获取当前时间（基于本地时区）
+			now := time.Now().In(loc)
 			formattedDate := now.Format("2006-01-02 15:04:05")
 			unixMilliTimestamp := now.UnixMilli()
 			datasmap := make(map[string]map[string]any)

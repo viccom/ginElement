@@ -139,7 +139,9 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 				}
 				if len(tags) != 0 {
 					datasmap := make(map[string]any)
-					now := time.Now()
+					loc, _ := time.LoadLocation("Local")
+					// 获取当前时间（基于本地时区）
+					now := time.Now().In(loc)
 					formattedDate := now.Format("2006-01-02 15:04:05")
 					unixMilliTimestamp := now.UnixMilli()
 					// 遍历设备点表获取数据
