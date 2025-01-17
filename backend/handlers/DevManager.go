@@ -75,6 +75,7 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 		IsRunning bool `json:"isRunning"` // 新增字段
 	}
 	OutterMap := make(map[string]NewConfig)
+	var isrun bool
 	for key, value := range values {
 		var newValue DevConfig
 		erra := json.Unmarshal([]byte(value.String()), &newValue)
@@ -82,21 +83,20 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 			fmt.Println("Error unmarshalling JSON:", erra)
 			return
 		}
-		fmt.Printf("键: %s, 值: %s\n", key, instid)
-		if !contains(ids, newValue.InstID) {
-			continue
+		if ContainsString(ids, newValue.InstID) {
+			isrun = true
+		} else {
+			isrun = false
+		}
+		//fmt.Printf("键: %+v, 值: %+v, %v\n", ids, newValue.InstID, isrun)
+
+		newData := NewConfig{
+			DevConfig: newValue,
+			IsRunning: isrun, // 设置新增的 Status 字段
 		}
 		if instid == "" {
-			newData := NewConfig{
-				DevConfig: newValue,
-				IsRunning: true, // 设置新增的 Status 字段
-			}
 			OutterMap[key] = newData
 		} else if instid == newValue.InstID {
-			newData := NewConfig{
-				DevConfig: newValue,
-				IsRunning: true, // 设置新增的 Status 字段
-			}
 			OutterMap[key] = newData
 		}
 	}

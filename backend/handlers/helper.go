@@ -111,8 +111,8 @@ func GetHardwareID() (string, error) {
 }
 
 // ContainsString 检测字符串是否在字符串数组中
-func ContainsString(arr []string, target string) bool {
-	for _, item := range arr {
+func ContainsString[T comparable](slice []T, target T) bool {
+	for _, item := range slice {
 		if item == target {
 			return true
 		}
