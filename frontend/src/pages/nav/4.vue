@@ -1,5 +1,5 @@
 <template>
   <div>
-    Navigation 4
+    设备模板
   </div>
 </template>

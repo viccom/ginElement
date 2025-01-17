@@ -171,6 +171,9 @@ function handleCloseTab() {
 </script>
 
 <template>
+  <div>
+    应用列表
+  </div>
   <el-tabs
     v-model="activeTab"
     type="card"

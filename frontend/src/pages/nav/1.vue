@@ -122,6 +122,9 @@ function handleDeleteClick(devName: string, devId: string) {
 </script>
 
 <template>
+  <div>
+    设备列表
+  </div>
   <el-tabs
     v-model="activeTab"
     type="card"

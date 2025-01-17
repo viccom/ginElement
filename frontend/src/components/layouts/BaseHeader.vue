@@ -23,7 +23,7 @@ function openAboutPage() {
 
     <el-menu-item>
       <a class="size-full flex items-center justify-center no-underline" @click="openAboutPage">
-        API文档
+        API
       </a>
     </el-menu-item>
 

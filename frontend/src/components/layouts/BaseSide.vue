@@ -73,7 +73,14 @@ function handleClose(key: string, keyPath: string[]) {
         </el-menu-item>
       </el-menu-item-group>
     </el-sub-menu>
-
+    <el-menu-item index="/nav/4">
+      <el-icon>
+        <Setting />
+      </el-icon>
+      <template #title>
+        设备模板
+      </template>
+    </el-menu-item>
     <el-menu-item index="/nav/4">
       <el-icon>
         <Setting />
