@@ -81,7 +81,7 @@ function handleClose(key: string, keyPath: string[]) {
         设备模板
       </template>
     </el-menu-item>
-    <el-menu-item index="/nav/4">
+    <el-menu-item index="/nav/5">
       <el-icon>
         <Setting />
       </el-icon>
