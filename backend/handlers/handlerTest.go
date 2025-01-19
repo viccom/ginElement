@@ -113,7 +113,7 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 			fmt.Println("Error unmarshalling JSON:", erra)
 			return
 		}
-		fmt.Printf("键: %s, Queryid: %s, InstID: %s\n", key, id, newValue.InstID)
+		//fmt.Printf("键: %s, Queryid: %s, InstID: %s\n", key, id, newValue.InstID)
 		if id == newValue.InstID {
 			OutterMap[key] = newValue
 		}

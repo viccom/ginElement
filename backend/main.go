@@ -120,14 +120,14 @@ func main() {
 	if err != nil {
 		return
 	}
-	for key, item := range items {
+	for _, item := range items {
 		var appconfig handlers.AppConfig
 		erra := json.Unmarshal([]byte(item.String()), &appconfig)
 		if erra != nil {
 			fmt.Println("Error unmarshalling JSON:", erra)
 			return
 		}
-		fmt.Printf("hashkey: %v, InstId: %v, AppCode: %v, AutoStart: %v\n", key, appconfig.InstID, appconfig.AppCode, appconfig.AutoStart)
+		//fmt.Printf("hashkey: %v, InstId: %v, AppCode: %v, AutoStart: %v\n", key, appconfig.InstID, appconfig.AppCode, appconfig.AutoStart)
 		if appconfig.AutoStart == true {
 			startWorker(handlers.IotappMap[appconfig.AppCode], cfgdb, rtdb, appconfig.InstID)
 		}
