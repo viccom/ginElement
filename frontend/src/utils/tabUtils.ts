@@ -1,6 +1,8 @@
 // src/utils/tabUtils.ts
 
 // 定义标签页类型
+import {ref} from "vue";
+
 export type TabType = 'appList' | 'appEditor' | 'devs' | 'form' | 'data' | 'chart' | string // 支持多种类型
 
 // 定义 Tab 接口
@@ -78,11 +80,29 @@ export function handleTabsEdit(tabs: Tab[], activeTab: string, targetName: strin
     return { tabs, activeTab }
   }
 
+  // 找到要关闭的标签页的索引
   const targetIndex = tabs.findIndex((tab: Tab) => tab.name === targetName)
-  if (targetIndex !== -1) {
-    tabs.splice(targetIndex, 1)
-    if (activeTab === targetName) {
-      activeTab = tabs[0]?.name || ''
+  if (targetIndex === -1) {
+    console.log('未找到要关闭的标签页')
+    return { tabs, activeTab }
+  }
+
+  // 关闭标签页
+  tabs.splice(targetIndex, 1)
+
+  // 如果关闭的是当前激活的标签页
+  if (activeTab === targetName) {
+    // 如果左边有标签页，则激活左边的标签页
+    if (targetIndex > 0) {
+      activeTab = tabs[targetIndex - 1].name
+    }
+    // 如果左边没有标签页，但右边有标签页，则激活右边的标签页
+    else if (tabs.length > 0) {
+      activeTab = tabs[0].name
+    }
+    // 如果没有标签页了，则清空 activeTab
+    else {
+      activeTab = ''
     }
   }
 

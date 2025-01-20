@@ -86,7 +86,8 @@ async function refreshData() {
 
 // 关闭当前标签页
 function closeTab() {
-  emit('close-tab') // 通知父组件关闭当前标签页
+  const savedActiveTab = localStorage.getItem(`apptabs_activeTab`)
+  emit('close-tab', savedActiveTab) // 通知父组件关闭当前标签页
 }
 </script>
 
