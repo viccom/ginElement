@@ -7,6 +7,7 @@ import (
 	"github.com/nalgeon/redka"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type testFunc func(id string, stopChan chan struct{})
@@ -37,6 +38,8 @@ var (
 		"opcua":     OpcUARead,
 		"mqttpub":   mqttPubData,
 	}
+	reconnectDelay = 5 * time.Second // 重连延迟
+
 )
 
 // 定义 DataQueue 结构

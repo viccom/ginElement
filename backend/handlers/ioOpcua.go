@@ -13,57 +13,63 @@ import (
 	"time"
 )
 
-// OpcUARead函数：去设备点表中获取配置信息，然后连接OPC Server订阅数据
+// OpcUARead 函数：去设备点表中获取配置信息，然后连接OPC Server订阅数据
 func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("OpcUARead 发生 panic: %v\n", r)
+		}
+	}()
+
 	// 通过ID(实例ID)获取实例的配置信息
 	appconfig, err := cfgdb.Hash().Get(InstListKey, id)
 	if err != nil {
-		fmt.Printf("database no instid\n")
+		log.Printf("数据库中没有实例ID: %v\n", id)
 		return
 	}
 	configstr := appconfig.String()
 	var newConfig AppConfig
 	err = json.Unmarshal([]byte(configstr), &newConfig)
 	configMap := newConfig.Config
-	fmt.Printf("myConfig %+v\n", configMap)
+	log.Printf("实例配置: %+v\n", configMap)
 
 	// 提取外层的 "Config"
 	config, ok := configMap.(map[string]any)
 	if !ok {
-		fmt.Println("Config is not a map[string]any or does not exist")
+		log.Println("配置不是 map[string]any 或不存在")
 		return
 	}
 
 	endpoint, ok := config["endpoint"].(string)
 	if !ok {
-		fmt.Println("host is not a string or does not exist")
+		log.Println("endpoint 不是字符串或不存在")
 	}
 	policy, ok := config["policy"].(string)
 	if !ok {
-		fmt.Println("policy is not a string or does not exist")
+		log.Println("policy 不是字符串或不存在")
 	}
 	mode, ok := config["mode"].(string)
 	if !ok {
-		fmt.Println("mode is not a string or does not exist")
+		log.Println("mode 不是字符串或不存在")
 	}
 	certFile, ok := config["cert"].(string)
 	if !ok {
-		fmt.Println("certFile is not a string or does not exist")
+		log.Println("certFile 不是字符串或不存在")
 	}
 	keyFile, ok := config["key"].(string)
 	if !ok {
-		fmt.Println("keyFile is not a string or does not exist")
+		log.Println("keyFile 不是字符串或不存在")
 	}
 
-	fmt.Printf("endpoint: %+v, policy: %+v, mode: %+v, certFile: %+v, keyFile: %+v\n", endpoint, policy, mode, certFile, keyFile)
+	log.Printf("endpoint: %+v, policy: %+v, mode: %+v, certFile: %+v, keyFile: %+v\n", endpoint, policy, mode, certFile, keyFile)
 	// 通过ID(实例ID)获取当前函数可读写的设备配置信息和设备点表信息
 	devValues, err1 := cfgdb.Hash().Items(DevAtInstKey)
 	if err1 != nil {
-		fmt.Printf("Err: %v\n", err1)
+		log.Printf("获取设备配置信息失败: %v\n", err1)
 		return
 	}
 	if len(devValues) == 0 {
-		fmt.Printf("database no any device\n")
+		log.Printf("数据库中没有设备\n")
 		return
 	}
 	//通过设备ID获取设备点信息
@@ -72,16 +78,16 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		var newValue DevConfig
 		erra := json.Unmarshal([]byte(value.String()), &newValue)
 		if erra != nil {
-			fmt.Println("Error unmarshalling JSON:", erra)
+			log.Println("解析 JSON 失败:", erra)
 			return
 		}
-		fmt.Printf("键: %s, Queryid: %s, InstID: %s\n", key, id, newValue.InstID)
+		log.Printf("键: %s, Queryid: %s, InstID: %s\n", key, id, newValue.InstID)
 		if id == newValue.InstID {
 			devMap[key] = newValue
 		}
 	}
 	if len(devMap) == 0 {
-		fmt.Printf("instid %v no match device\n", id)
+		log.Printf("实例ID %v 没有匹配的设备\n", id)
 		return
 	}
 
@@ -92,7 +98,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	for devkey := range devMap {
 		tags, err2 := cfgdb.Hash().Items(devkey)
 		if err2 != nil {
-			fmt.Printf("Err: %v\n", err2)
+			log.Printf("获取设备点表失败: %v\n", err2)
 			continue
 		}
 		if len(tags) != 0 {
@@ -100,7 +106,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 				var newValue []string
 				erra := json.Unmarshal([]byte(tagvalue.String()), &newValue)
 				if erra != nil {
-					fmt.Println("Error unmarshalling JSON:", erra)
+					log.Println("解析 JSON 失败:", erra)
 					return
 				}
 				opcitem := newValue[0]
@@ -111,78 +117,115 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		}
 	}
 	if len(opctags) == 0 {
-		fmt.Printf("instid %v no tag\n", id)
+		log.Printf("实例ID %v 没有标签\n", id)
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	endpoints, err := opcua.GetEndpoints(ctx, endpoint)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ep, err := opcua.SelectEndpoint(endpoints, policy, ua.MessageSecurityModeFromString(mode))
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Print("*", ep.SecurityPolicyURI, ep.SecurityMode)
+	var c *opcua.Client
+	var m *monitor.NodeMonitor
+	var wg sync.WaitGroup
 
-	opts := []opcua.Option{
-		opcua.SecurityPolicy(policy),
-		opcua.SecurityModeString(mode),
-		opcua.CertificateFile(certFile),
-		opcua.PrivateKeyFile(keyFile),
-		opcua.AuthAnonymous(),
-		opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
+	// 连接 OPC UA Server
+	connect := func() error {
+		endpoints, err := opcua.GetEndpoints(ctx, endpoint)
+		if err != nil {
+			return fmt.Errorf("获取端点失败: %v", err)
+		}
+		ep, err := opcua.SelectEndpoint(endpoints, policy, ua.MessageSecurityModeFromString(mode))
+		if err != nil {
+			return fmt.Errorf("选择端点失败: %v", err)
+		}
+		log.Print("*", ep.SecurityPolicyURI, ep.SecurityMode)
+
+		opts := []opcua.Option{
+			opcua.SecurityPolicy(policy),
+			opcua.SecurityModeString(mode),
+			opcua.CertificateFile(certFile),
+			opcua.PrivateKeyFile(keyFile),
+			opcua.AuthAnonymous(),
+			opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
+		}
+
+		c, _ = opcua.NewClient(ep.EndpointURL, opts...)
+		if err := c.Connect(ctx); err != nil {
+			return fmt.Errorf("连接失败: %v", err)
+		}
+
+		m, err = monitor.NewNodeMonitor(c)
+		if err != nil {
+			return fmt.Errorf("创建监控器失败: %v", err)
+		}
+
+		m.SetErrorHandler(func(_ *opcua.Client, sub *monitor.Subscription, err error) {
+			log.Printf("错误: sub=%d err=%s", sub.SubscriptionID(), err.Error())
+		})
+
+		return nil
 	}
 
-	c, err := opcua.NewClient(ep.EndpointURL, opts...)
-	if err != nil {
-		log.Fatal(err)
+	// 重连机制
+	reconnect := func() {
+		for {
+			select {
+			case <-stopChan:
+				log.Printf("收到停止信号，退出重连循环\n")
+				return
+			default:
+				log.Printf("尝试连接 OPC UA Server\n")
+				if err := connect(); err == nil {
+					log.Println("连接成功")
+					return
+				}
+				log.Printf("连接失败，等待 %v 后重试\n", reconnectDelay)
+				time.Sleep(reconnectDelay)
+			}
+		}
 	}
-	if err := c.Connect(ctx); err != nil {
-		log.Fatal(err)
-	}
-	defer c.Close(ctx)
 
-	m, err := monitor.NewNodeMonitor(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// 初始连接
+	reconnect()
+	defer func() {
+		if c != nil {
+			c.Close(ctx)
+		}
+	}()
 
-	m.SetErrorHandler(func(_ *opcua.Client, sub *monitor.Subscription, err error) {
-		log.Printf("error: sub=%d err=%s", sub.SubscriptionID(), err.Error())
-	})
 	// 创建队列
 	queue := NewDataQueue()
-	// 创建 WaitGroup 用于同步
-	wg := &sync.WaitGroup{}
+
 	// 启动子线程
-	// start callback-based subscription
 	wg.Add(1)
-	go startCallbackSub(ctx, m, 1, 0, wg, queue, opctags...)
+	go startCallbackSub(ctx, m, 1, 0, &wg, queue, opctags...)
 
 	// 监听停止信号
 	for {
 		select {
 		case <-stopChan:
-			fmt.Printf("子线程OPCUA实例 %s 收到停止信号，退出\n", id)
+			log.Printf("子线程 OPCUA 实例 %s 收到停止信号，退出\n", id)
 			cancel()  // 取消上下文，确保 startCallbackSub 退出
 			wg.Wait() // 等待子线程退出
 			return
 		default:
-			// 没有停止信号，继续运行
-			//fmt.Printf("子线程OPCUA实例 %s 正在运行\n", id)
+			// 检查连接状态
+			if c == nil || c.State() != opcua.Connected {
+				log.Println("检测到连接断开，尝试重新连接")
+				reconnect()
+				continue
+			}
+
+			// 处理数据
 			datasmap := make(map[string]map[string]any)
 			for queue.Len() > 0 {
-				fmt.Println("Queue Length:", queue.Len())
+				log.Println("队列长度:", queue.Len())
 				if val, ok := queue.Dequeue(); ok {
-					fmt.Println("Consumed:", val)
+					//log.Println("消费数据:", val)
 					var data []any
 					err := json.Unmarshal([]byte(val), &data)
 					if err != nil {
-						fmt.Println("解析失败:", err)
+						//log.Println("解析失败:", err)
 						return
 					}
 					opcitem := data[0].(string)
@@ -196,11 +239,11 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					datasmap[devkey][tagkey] = valueMapJson
 				}
 			}
-			//	统一将数据写入到redka数据库
+			// 统一将数据写入到redka数据库
 			for devkey := range datasmap {
 				_, errz := rtdb.Hash().SetMany(devkey, datasmap[devkey])
 				if errz != nil {
-					fmt.Printf("Err: %v\n", errz)
+					log.Printf("写入数据库失败: %v\n", errz)
 					continue
 				}
 			}
@@ -221,9 +264,7 @@ func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag
 			if msg.Error != nil {
 				log.Printf("[callback] sub=%d error=%s", s.SubscriptionID(), msg.Error)
 			} else {
-				//log.Printf("[callback] sub=%d ts=%s node=%s value=%v", s.SubscriptionID(), msg.ServerTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
-				//datasmap := make(map[string]map[string]any)
-				valueMap := []any{msg.NodeID, msg.ServerTimestamp.UTC().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix()}
+				valueMap := []any{msg.NodeID, msg.ServerTimestamp.Local().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix()}
 				valueMapJson, _ := json.Marshal(valueMap)
 				queue.Enqueue(string(valueMapJson))
 			}
@@ -241,6 +282,6 @@ func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag
 }
 
 func cleanup(ctx context.Context, sub *monitor.Subscription) {
-	log.Printf("stats: sub=%d delivered=%d dropped=%d", sub.SubscriptionID(), sub.Delivered(), sub.Dropped())
+	log.Printf("统计: sub=%d 已传递=%d 已丢弃=%d", sub.SubscriptionID(), sub.Delivered(), sub.Dropped())
 	sub.Unsubscribe(ctx)
 }
