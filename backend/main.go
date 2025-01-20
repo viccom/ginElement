@@ -23,6 +23,7 @@ import (
 func main() {
 	var (
 		startWeb = flag.String("startweb", "0", "startWeb mode: 1, 0, Default: 1")
+		port     = flag.String("port", "8880", "listen port, Default: 8880")
 	)
 	//flag.BoolVar(&debug.Enable, "debug", false, "enable debug logging")
 	flag.Parse()
@@ -60,19 +61,19 @@ func main() {
 	}
 	defer cfgdb.Close()
 
-	//opts := redka.Options{
+	//rtopts := redka.Options{
 	//	DriverName: "sqlite3",
 	//	Pragma: map[string]string{
 	//		"temp_store": "memory",
 	//	},
 	//}
 
-	rtdb, err := redka.Open("data/rt.db", &opts)
+	//rtdb, err := redka.Open("data/rt.db", &opts)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file:/rt.db?vfs=memdb", nil)
 	// All data is lost when the database is closed.
 	//rtdb, err := redka.Open("file::memory:?cache=shared", nil)
-	//rtdb, err := redka.Open("file:redka?mode=memory&cache=shared", nil)
+	rtdb, err := redka.Open("file:redka?mode=memory&cache=shared", &opts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,14 +120,14 @@ func main() {
 	if err != nil {
 		return
 	}
-	for key, item := range items {
+	for _, item := range items {
 		var appconfig handlers.AppConfig
 		erra := json.Unmarshal([]byte(item.String()), &appconfig)
 		if erra != nil {
 			fmt.Println("Error unmarshalling JSON:", erra)
 			return
 		}
-		fmt.Printf("hashkey: %v, InstId: %v, AppCode: %v, AutoStart: %v\n", key, appconfig.InstID, appconfig.AppCode, appconfig.AutoStart)
+		//fmt.Printf("hashkey: %v, InstId: %v, AppCode: %v, AutoStart: %v\n", key, appconfig.InstID, appconfig.AppCode, appconfig.AutoStart)
 		if appconfig.AutoStart == true {
 			startWorker(handlers.IotappMap[appconfig.AppCode], cfgdb, rtdb, appconfig.InstID)
 		}
@@ -142,7 +143,7 @@ func main() {
 
 	// 启动WEB服务
 	fmt.Println("Server is running on :8880...")
-	err = r.Run(":8880")
+	err = r.Run(":" + *port)
 	if err != nil {
 		return
 	}

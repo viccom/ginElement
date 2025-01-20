@@ -85,7 +85,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	// 用于存储所有订阅数据的OPC标签
 	mbtags := make([][]string, 0)
 	// 用于存储每个标签的父设备
-	mbParent := make(map[string]string, 0)
+	var mbParent = make(map[string]string)
 	for devkey := range devMap {
 		// 从设备点表中获取配置信息
 		tags, err2 := cfgdb.Hash().Items(devkey)
@@ -154,7 +154,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				for {
 					err = client.Open()
 					if err != nil {
-						log.Printf("Failed to connect to Modbus server at %s:%d. Retrying...\n", host, port)
+						log.Printf("Failed to connect to Modbus server at %s:%v. Retrying...\n", host, port)
 						time.Sleep(1)
 						continue
 					}
@@ -166,7 +166,9 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				return
 			}
 			// 遍历切片中的每个 map
-			now := time.Now()
+			loc, _ := time.LoadLocation("Local")
+			// 获取当前时间（基于本地时区）
+			now := time.Now().In(loc)
 			formattedDate := now.Format("2006-01-02 15:04:05")
 			unixMilliTimestamp := now.UnixMilli()
 			datasmap := make(map[string]map[string]any)

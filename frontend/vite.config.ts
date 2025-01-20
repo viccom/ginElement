@@ -76,7 +76,7 @@ export default defineConfig({
     open: true, // 自动打开浏览器
   },
   build: {
-    outDir: '../backend/debug/html', // 编译输出目录
+    outDir: '../backend/html', // 编译输出目录
     assetsDir: 'assets', // 静态资源目录
   },
 })
