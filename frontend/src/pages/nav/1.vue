@@ -1,6 +1,8 @@
 <script lang="ts" setup>
+import type { Tab } from '~/utils/tabUtils'
 import { ElMessageBox } from 'element-plus'
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue' // 引入 watch
+import { addTab, handleTabsEdit, initDefaultTab, restoreTabsFromLocalStorage, saveTabsToLocalStorage } from '~/utils/tabUtils'
 import ChartComponent from './1_components/ChartComponent.vue'
 import FormComponent from './1_components/FormComponent.vue'
 import TableDataList from './1_components/TableDataList.vue'
@@ -9,21 +11,8 @@ import TableDevList from './1_components/TableDevList.vue'
 // 定义标签页类型
 type TabType = 'devs' | 'form' | 'data' | 'chart'
 
-// 定义 Tab 接口
-interface Tab {
-  title: string
-  name: string
-  type: TabType
-  config: {
-    apiUrl: string
-  }
-  jsonDev: {
-    devName: string
-    devDesc: string
-    devId: string
-    instId: string
-  }
-}
+// 指定唯一的 storageKey
+const devPage_storageKey = 'devtabs'
 
 // 动态组件映射
 const componentMap = {
@@ -35,66 +24,47 @@ const componentMap = {
 
 // 定义 activeTab 和 tabs
 const activeTab = ref('1')
-const tabs = ref<Tab[]>([
-  {
-    title: '总览',
-    name: '1',
-    type: 'devs',
-    config: {
-      apiUrl: '/api/v1/listDevices',
-    },
-    jsonDev: {
-      devName: '',
-      devDesc: '',
-      devId: '',
-      instId: '',
-    },
+const tabs = ref<Tab[]>(initDefaultTab({
+  title: '总览',
+  name: '1',
+  type: 'devs',
+  config: {
+    apiUrl: '/api/v1/listDevices',
   },
-])
+  jsonData: {
+    devName: '',
+    devDesc: '',
+    devId: '',
+    instId: '',
+  },
+}))
+
+// 在页面加载时恢复TAB标签页状态
+onMounted(() => {
+  const { tabs: savedTabs, activeTab: savedActiveTab } = restoreTabsFromLocalStorage(devPage_storageKey)
+  if (savedTabs.length > 0) {
+    tabs.value = savedTabs
+    activeTab.value = savedActiveTab
+  }
+})
+// 监听 activeTab 的变化
+watch(activeTab, (newActiveTab) => {
+  // 保存TAB状态
+  saveTabsToLocalStorage(tabs.value, newActiveTab, devPage_storageKey)
+})
 
 // 添加新标签页
-function addTab(title: string, type: TabType, config: { apiUrl: string }, jsonDev: { devName: string, devDesc: string, devId: string, instId: string }) {
-  // 检查是否已存在相同 title 的标签页
-  const existingTab = tabs.value.find(tab => tab.title === title)
-
-  if (existingTab) {
-    // 如果存在，则激活该标签页
-    activeTab.value = existingTab.name
-  }
-  else {
-    // 如果不存在，则创建新标签页
-    const newTabName = `${tabs.value.length + 1}`
-    const newTab = {
-      title,
-      name: newTabName,
-      type,
-      config,
-      jsonDev,
-    }
-    tabs.value.push(newTab)
-    activeTab.value = newTabName
-  }
-}
-
-// 处理标签页关闭
-function handleTabsEdit(targetName: string) {
-  if (targetName === tabs.value[0].name) {
-    console.log('最左边的标签页不允许关闭')
-    return
-  }
-  const targetIndex = tabs.value.findIndex((tab: Tab) => tab.name === targetName)
-  if (targetIndex !== -1) {
-    tabs.value.splice(targetIndex, 1)
-    if (activeTab.value === targetName) {
-      activeTab.value = tabs.value[0]?.name || ''
-    }
-  }
+function addNewTab(title: string, type: TabType, config: { apiUrl: string }, jsonData: { [key: string]: any }) {
+  const result = addTab(tabs.value, activeTab.value, title, type, config, jsonData)
+  tabs.value = result.tabs
+  activeTab.value = result.activeTab
+  saveTabsToLocalStorage(tabs.value, activeTab.value, devPage_storageKey)
 }
 
 // 处理“数据”按钮点击事件
 function handleDataClick(devName: string, devDesc: string, devId: string, instId: string) {
   const tabName = `数据[${devName}]`
-  addTab(tabName, 'data', {
+  addNewTab(tabName, 'data', {
     apiUrl: `/api/v1/getDevvalues`,
   }, {
     devName,
@@ -119,6 +89,15 @@ function handleDeleteClick(devName: string, devId: string) {
     dangerouslyUseHTMLString: true, // 允许使用 HTML 字符串
   })
 }
+
+// 处理标签页关闭
+function handleCloseTab(targetName: string) {
+  const result = handleTabsEdit(tabs.value, activeTab.value, targetName, devPage_storageKey)
+  tabs.value = result.tabs
+  activeTab.value = result.activeTab
+  // 保存TAB状态
+  saveTabsToLocalStorage(tabs.value, activeTab.value, devPage_storageKey)
+}
 </script>
 
 <template>
@@ -130,7 +109,7 @@ function handleDeleteClick(devName: string, devId: string) {
     type="card"
     editable
     class="demo-tabs"
-    @tab-remove="handleTabsEdit"
+    @tab-remove="handleCloseTab"
   >
     <el-tab-pane
       v-for="(tab, index) in tabs"
@@ -143,7 +122,7 @@ function handleDeleteClick(devName: string, devId: string) {
       <component
         :is="componentMap[tab.type]"
         :config="tab.config"
-        :json-dev="tab.jsonDev"
+        :json-data="tab.jsonData"
         @data-click="handleDataClick"
         @point-click="handlePointClick"
         @delete-click="handleDeleteClick"

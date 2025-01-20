@@ -15,10 +15,19 @@ const props = defineProps<{
   config: {
     apiUrl: string
   }
+  jsonData: {
+    devName: string
+    devDesc: string
+    devId: string
+    instId: string
+  }
 }>()
 
 // 定义事件
 const emit = defineEmits(['data-click', 'point-click', 'delete-click'])
+
+// 使用 props.jsonData 中的数据
+console.log(props.jsonData.devName)
 
 // 定义 tableData 的类型为 DeviceData[]
 const tableData = ref<DeviceData[]>([])
@@ -84,7 +93,7 @@ onUnmounted(() => {
     <el-table-column label="宿主状态">
       <template #default="scope">
         <el-tag
-            :type="
+          :type="
             scope.row.isRunning === true
               ? 'success'
               : scope.row.isRunning === false

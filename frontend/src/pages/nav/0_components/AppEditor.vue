@@ -6,7 +6,7 @@ const props = defineProps<{
   config: {
     apiUrl: string
   }
-  jsonApp: {
+  jsonData: {
     instName: string
     instId: string
     isRunning: boolean
@@ -17,8 +17,8 @@ const props = defineProps<{
 const emit = defineEmits(['close-tab'])
 
 const formData = ref({
-  instName: props.jsonApp.instName,
-  instId: props.jsonApp.instId,
+  instName: props.jsonData.instName,
+  instId: props.jsonData.instId,
   appCode: '',
   appType: '',
   autoStart: '',
@@ -40,7 +40,7 @@ function formatJson(json: any) {
 
 onMounted(async () => {
   const requestBody = {
-    instid: props.jsonApp.instId,
+    instid: props.jsonData.instId,
   }
   try {
     const response = await axios.post(props.config.apiUrl, requestBody)
@@ -69,7 +69,7 @@ function enableEditing() {
 // 刷新数据
 async function refreshData() {
   const requestBody = {
-    instid: props.jsonApp.instId,
+    instid: props.jsonData.instId,
   }
   try {
     const response = await axios.post(props.config.apiUrl, requestBody)

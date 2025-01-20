@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import { Refresh } from '@element-plus/icons-vue'
 import axios from 'axios'
-import { onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus' // 引入 ElMessage 用于显示提示信息
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps<{
   config: {
     apiUrl: string
   }
-  jsonDev: {
+  jsonData: {
     devName: string
     devDesc: string
     devId: string
@@ -16,10 +16,13 @@ const props = defineProps<{
   }
 }>()
 
-const devName = ref(props.jsonDev.devName)
-const instId = ref(props.jsonDev.instId)
-const devDesc = ref(props.jsonDev.devDesc)
-const devId = ref(props.jsonDev.devId)
+// 使用 props.jsonData 中的数据
+console.log(props.jsonData.devName)
+
+const devName = ref(props.jsonData.devName)
+const instId = ref(props.jsonData.instId)
+const devDesc = ref(props.jsonData.devDesc)
+const devId = ref(props.jsonData.devId)
 
 // 定义表格数据的类型
 interface TagData {
@@ -42,7 +45,7 @@ async function fetchData() {
   try {
     // 定义 POST 请求的请求体
     const requestBody = {
-      devid: props.jsonDev.devId, // 使用 props.jsonDev.devId 'DEV_4vyYRDmIkIrQbOWD'
+      devid: props.jsonData.devId, // 使用 props.jsonDev.devId 'DEV_4vyYRDmIkIrQbOWD'
     }
 
     // 发送 POST 请求
@@ -121,9 +124,9 @@ function handleSetValueClick(tagName: string) {
       <el-col :span="2">
         <div>
           <el-input
-              v-model="search"
-              placeholder="请输入点名过滤"
-              clearable
+            v-model="search"
+            placeholder="请输入点名过滤"
+            clearable
           />
         </div>
       </el-col>
@@ -131,10 +134,10 @@ function handleSetValueClick(tagName: string) {
       <el-col :span="4">
         <div>
           <el-input
-              v-model="devName"
-              style="max-width: 100%"
-              disabled
-              placeholder="Please input"
+            v-model="devName"
+            style="max-width: 100%"
+            disabled
+            placeholder="Please input"
           >
             <template #prepend>
               名称：
@@ -145,10 +148,10 @@ function handleSetValueClick(tagName: string) {
       <el-col :span="4">
         <div>
           <el-input
-              v-model="devDesc"
-              style="max-width: 100%"
-              disabled
-              placeholder="Please input"
+            v-model="devDesc"
+            style="max-width: 100%"
+            disabled
+            placeholder="Please input"
           >
             <template #prepend>
               描述：
@@ -159,10 +162,10 @@ function handleSetValueClick(tagName: string) {
       <el-col :span="5">
         <div>
           <el-input
-              v-model="devId"
-              style="max-width: 100%"
-              disabled
-              placeholder="Please input"
+            v-model="devId"
+            style="max-width: 100%"
+            disabled
+            placeholder="Please input"
           >
             <template #prepend>
               设备ID：
@@ -173,10 +176,10 @@ function handleSetValueClick(tagName: string) {
       <el-col :span="5">
         <div>
           <el-input
-              v-model="instId"
-              style="max-width: 100%"
-              disabled
-              placeholder="Please input"
+            v-model="instId"
+            style="max-width: 100%"
+            disabled
+            placeholder="Please input"
           >
             <template #prepend>
               实例：
@@ -199,10 +202,10 @@ function handleSetValueClick(tagName: string) {
       <el-table-column prop="tagName" label="名称" />
       <!-- 第2列：时间（支持排序） -->
       <el-table-column
-          prop="timeStr"
-          label="时间"
-          sortable
-          :sort-method="sortTimeStr"
+        prop="timeStr"
+        label="时间"
+        sortable
+        :sort-method="sortTimeStr"
       />
       <!-- 第3列：数值 -->
       <el-table-column prop="value" label="数值" />

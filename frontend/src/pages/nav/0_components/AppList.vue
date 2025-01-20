@@ -16,6 +16,11 @@ const props = defineProps<{
   config: {
     apiUrl: string
   }
+  jsonData: {
+    instName: string
+    instId: string
+    isRunning: boolean
+  }
 }>()
 
 // 定义事件

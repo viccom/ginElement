@@ -1,27 +1,11 @@
 <script lang="ts" setup>
+import type { Tab } from '~/utils/tabUtils'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue' // 引入 watch
+import { addTab, handleTabsEdit, initDefaultTab, restoreTabsFromLocalStorage, saveTabsToLocalStorage } from '~/utils/tabUtils'
 import AppEditor from './0_components/AppEditor.vue'
 import AppList from './0_components/AppList.vue'
-
-// 定义标签页类型
-type TabType = 'appList' | 'appEditor'
-
-// 定义 Tab 接口
-interface Tab {
-  title: string
-  name: string
-  type: TabType
-  config: {
-    apiUrl: string
-  }
-  jsonApp: {
-    instName: string
-    instId: string
-    isRunning: boolean
-  }
-}
 
 // 动态组件映射
 const componentMap = {
@@ -31,71 +15,53 @@ const componentMap = {
 
 // 定义 activeTab 和 tabs
 const activeTab = ref('1')
-const tabs = ref<Tab[]>([
-  {
-    title: '总览',
-    name: '1',
-    type: 'appList',
-    config: {
-      apiUrl: `/api/v1/listApps?t=${Date.now()}`,
-    },
-    jsonApp: {
-      instName: '',
-      instId: '',
-      isRunning: false,
-    },
+const tabs = ref<Tab[]>(initDefaultTab({
+  title: '总览',
+  name: '1',
+  type: 'appList',
+  config: {
+    apiUrl: `/api/v1/listApps?t=${Date.now()}`,
   },
-])
+  jsonData: {
+    instName: '',
+    instId: '',
+    isRunning: false,
+  },
+}))
 
-// 添加新标签页
-function addTab(title: string, type: TabType, config: { apiUrl: string }, jsonApp: { instName: string, instId: string, isRunning: boolean }) {
-  // 检查是否已存在相同 title 的标签页
-  const existingTab = tabs.value.find(tab => tab.title === title)
+// 指定唯一的 storageKey
+const appPage_storageKey = 'apptabs'
 
-  if (existingTab) {
-    // 如果存在，则激活该标签页
-    activeTab.value = existingTab.name
+// 在页面加载时恢复TAB标签页状态
+onMounted(() => {
+  const { tabs: savedTabs, activeTab: savedActiveTab } = restoreTabsFromLocalStorage(appPage_storageKey)
+  if (savedTabs.length > 0) {
+    tabs.value = savedTabs
+    activeTab.value = savedActiveTab
   }
-  else {
-    // 如果不存在，则创建新标签页
-    const newTabName = `${tabs.value.length + 1}`
-    const newTab = {
-      title,
-      name: newTabName,
-      type,
-      config,
-      jsonApp,
-    }
-    tabs.value.push(newTab)
-    activeTab.value = newTabName
-  }
-}
+})
+// 监听 activeTab 的变化
+watch(activeTab, (newActiveTab) => {
+  // 保存TAB状态
+  saveTabsToLocalStorage(tabs.value, newActiveTab, appPage_storageKey)
+})
 
-// 处理标签页关闭
-function handleTabsEdit(targetName: string) {
-  if (targetName === tabs.value[0].name) {
-    console.log('最左边的标签页不允许关闭')
-    return
-  }
-  const targetIndex = tabs.value.findIndex((tab: Tab) => tab.name === targetName)
-  if (targetIndex !== -1) {
-    tabs.value.splice(targetIndex, 1)
-    if (activeTab.value === targetName) {
-      activeTab.value = tabs.value[0]?.name || ''
-    }
-  }
-}
 
 // 处理“编辑”按钮点击事件
 function handleEditClick(instName: string, instId: string) {
   const tabName = `编辑[${instName}]`
-  addTab(tabName, 'appEditor', {
+  const result = addTab(tabs.value, activeTab.value, tabName, 'appEditor', {
     apiUrl: `/api/v1/getApp`,
   }, {
     instName,
     instId,
     isRunning: false,
   })
+  tabs.value = result.tabs
+  activeTab.value = result.activeTab
+
+  // 保存TAB状态
+  saveTabsToLocalStorage(tabs.value, activeTab.value, appPage_storageKey)
 }
 
 // 处理“启动”按钮点击事件
@@ -113,9 +79,9 @@ async function handleStartClick(instName: string, instId: string, isRunning: boo
     if (response.data.data) {
       ElMessage.success(`启动成功: ${instName} (ID: ${instId})`)
       // 更新 isRunning 状态
-      const targetTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
+      const targetTab = tabs.value.find(tab => tab.jsonData.instId === instId)
       if (targetTab) {
-        targetTab.jsonApp.isRunning = true
+        targetTab.jsonData.isRunning = true
       }
     }
     else {
@@ -143,9 +109,9 @@ async function handleStopClick(instName: string, instId: string, isRunning: bool
     if (response.data.data) {
       ElMessage.success(`停止成功: ${instName} (ID: ${instId})`)
       // 更新 isRunning 状态
-      const targetTab = tabs.value.find(tab => tab.jsonApp.instId === instId)
+      const targetTab = tabs.value.find(tab => tab.jsonData.instId === instId)
       if (targetTab) {
-        targetTab.jsonApp.isRunning = false
+        targetTab.jsonData.isRunning = false
       }
     }
     else {
@@ -164,9 +130,14 @@ function handleDeleteClick(instName: string, instId: string) {
   })
 }
 
-// 处理关闭标签页事件
-function handleCloseTab() {
-  handleTabsEdit(activeTab.value)
+// 处理标签页关闭
+function handleCloseTab(targetName: string) {
+  const result = handleTabsEdit(tabs.value, activeTab.value, targetName, appPage_storageKey)
+  tabs.value = result.tabs
+  activeTab.value = result.activeTab
+
+  // 保存TAB状态
+  saveTabsToLocalStorage(tabs.value, activeTab.value, appPage_storageKey)
 }
 </script>
 
@@ -179,7 +150,7 @@ function handleCloseTab() {
     type="card"
     editable
     class="demo-tabs"
-    @tab-remove="handleTabsEdit"
+    @tab-remove="handleCloseTab"
   >
     <el-tab-pane
       v-for="(tab, index) in tabs"
@@ -192,7 +163,7 @@ function handleCloseTab() {
       <component
         :is="componentMap[tab.type]"
         :config="tab.config"
-        :json-app="tab.jsonApp"
+        :json-data="tab.jsonData"
         @edit-click="handleEditClick"
         @start-click="handleStartClick"
         @stop-click="handleStopClick"
@@ -202,12 +173,3 @@ function handleCloseTab() {
     </el-tab-pane>
   </el-tabs>
 </template>
-
-<style>
-.demo-tabs > .el-tabs__content {
-  padding: 32px;
-  color: #6b778c;
-  font-size: 32px;
-  font-weight: 600;
-}
-</style>
