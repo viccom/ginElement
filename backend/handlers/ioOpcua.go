@@ -167,17 +167,17 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	}
 
 	// 重连机制
-	reconnect := func() {
+	reconnect := func() bool {
 		for {
 			select {
 			case <-stopChan:
 				log.Printf("收到停止信号，退出重连循环\n")
-				return
+				return false
 			default:
 				log.Printf("尝试连接 OPC UA Server\n")
 				if err := connect(); err == nil {
 					log.Println("连接成功")
-					return
+					return true
 				}
 				log.Printf("连接失败，等待 %v 后重试\n", reconnectDelay)
 				time.Sleep(reconnectDelay)
@@ -186,7 +186,9 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	}
 
 	// 初始连接
-	reconnect()
+	if !reconnect() {
+		return
+	}
 	defer func() {
 		if c != nil {
 			c.Close(ctx)
@@ -212,20 +214,20 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 			// 检查连接状态
 			if c == nil || c.State() != opcua.Connected {
 				log.Println("检测到连接断开，尝试重新连接")
-				reconnect()
+				if !reconnect() {
+					return
+				}
 				continue
 			}
 
 			// 处理数据
 			datasmap := make(map[string]map[string]any)
 			for queue.Len() > 0 {
-				log.Println("队列长度:", queue.Len())
 				if val, ok := queue.Dequeue(); ok {
-					//log.Println("消费数据:", val)
 					var data []any
 					err := json.Unmarshal([]byte(val), &data)
 					if err != nil {
-						//log.Println("解析失败:", err)
+						log.Println("解析失败:", err)
 						return
 					}
 					opcitem := data[0].(string)
@@ -251,7 +253,6 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 		}
 	}
 }
-
 func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, queue *DataQueue, nodes ...string) {
 	defer wg.Done() // 确保在函数退出时调用 Done()
 	sub, err := m.Subscribe(

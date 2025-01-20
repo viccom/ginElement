@@ -144,17 +144,17 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	}
 
 	// 重连机制
-	reconnect := func() {
+	reconnect := func() bool {
 		for {
 			select {
 			case <-stopChan:
 				log.Printf("收到停止信号，退出重连循环\n")
-				return
+				return false
 			default:
 				log.Printf("尝试连接 Modbus 服务器\n")
 				if err := connect(); err == nil {
 					log.Println("连接成功")
-					return
+					return true
 				}
 				log.Printf("连接失败，等待 %v 后重试\n", reconnectDelay)
 				time.Sleep(reconnectDelay)
@@ -163,7 +163,9 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	}
 
 	// 初始连接
-	reconnect()
+	if !reconnect() {
+		return
+	}
 	defer func() {
 		if client != nil {
 			client.Close()
