@@ -30,6 +30,8 @@ build:
 	@echo "Building for $(PLATFORM)/$(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR)/$(PLATFORM)/$(ARCH)
 	@CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GO) build -ldflags="-s -w" -o $(OUTPUT_DIR)/$(PLATFORM)/$(ARCH)/$(PROJECT_NAME)$(if $(filter windows, $(PLATFORM)),.exe,) .
+	@echo "Compressing binary with upx..."
+	@upx --best $(OUTPUT_DIR)/$(PLATFORM)/$(ARCH)/$(PROJECT_NAME)$(if $(filter windows, $(PLATFORM)),.exe,)
 
 # 清理编译输出
 clean:

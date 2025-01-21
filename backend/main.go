@@ -50,7 +50,7 @@ func main() {
 		fmt.Printf("Error: %v\n", errx)
 		return
 	}
-	err = handlers.CheckDBAndDelete("data/rt.db")
+	//err = handlers.CheckDBAndDelete("data/rt.db")
 	// 初始化数据库连接
 	opts := redka.Options{
 		DriverName: "sqlite",
@@ -134,7 +134,7 @@ func main() {
 	}
 	startweb := *startWeb
 	if startweb == "1" {
-		url := "http://localhost:8880"
+		url := "http://localhost:" + *port
 		erra := openBrowser(url)
 		if erra != nil {
 			fmt.Printf("Failed to open browser: %s\n", erra)

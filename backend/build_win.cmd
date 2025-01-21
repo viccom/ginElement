@@ -28,6 +28,7 @@ for %%A in (%ARCHS%) do (
     set GOOS=windows
     set CGO_ENABLED=0
     %GO% build -ldflags="-s -w" -o %OUTPUT_DIR%\windows_%%A\%PROJECT_NAME%_win%GOARCH%.exe .
+    upx -9 %OUTPUT_DIR%\windows_%%A\%PROJECT_NAME%_win%GOARCH%.exe
 )
 
 echo "Build completed!"
