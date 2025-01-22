@@ -8,7 +8,6 @@ import (
 	_ "ginElement/docs"
 	"ginElement/handlers"
 	"ginElement/routes"
-	"github.com/astaxie/beego"
 	"github.com/gin-gonic/gin"
 	"github.com/nalgeon/redka"
 	"os"
@@ -24,8 +23,9 @@ import (
 
 func main() {
 	var (
-		startWeb = flag.String("startweb", "0", "startWeb mode: 1, 0, Default: 1")
-		port     = flag.String("port", "8880", "listen port, Default: 8880")
+		port      = flag.String("port", "8880", "listen port, Default: 8880")
+		startWeb  = flag.String("startweb", "0", "startWeb mode: 1, 0, Default: 0")
+		enableNpc = flag.String("enablenpc", "0", "enableNpc mode: 1, 0, Default: 0")
 	)
 	//flag.BoolVar(&debug.Enable, "debug", false, "enable debug logging")
 	flag.Parse()
@@ -134,14 +134,21 @@ func main() {
 			startWorker(handlers.IotappMap[appconfig.AppCode], cfgdb, rtdb, appconfig.InstID)
 		}
 	}
-	// Initialize beego
-	beego.BConfig.RunMode = beego.PROD
-	beego.BConfig.CopyRequestBody = true
 
 	// 启动npc客户端
-	if err := assistant.NpcRun(); err != nil {
-		log.Printf("Failed to start NPC client: %v", err)
-		return
+	enablenpc := *enableNpc
+	if enablenpc == "1" {
+		go func() {
+			var err = assistant.NpcRun(
+				"nps.metme.top:7088", // serverAddr
+				"goiot-"+newrid,      // verifyKey
+				"tcp",                // connType
+				60,                   // disconnectTime
+			)
+			if err != nil {
+				log.Printf("Failed to start NPC client: %v", err)
+			}
+		}()
 	}
 
 	// 启动WEB浏览器

@@ -6,14 +6,7 @@ import (
 	"time"
 )
 
-var (
-	serverAddr     = "nps.metme.top:7088"
-	verifyKey      = "84dce5a776bf44bba953aaf2f108fbda"
-	connType       = "tcp"
-	disconnectTime = 60
-)
-
-func NpcRun() error {
+func NpcRun(serverAddr string, verifyKey string, connType string, disconnectTime int) error {
 	go func() {
 		for {
 			rpClient := client.NewRPClient(serverAddr, verifyKey, connType, "", nil, disconnectTime)
