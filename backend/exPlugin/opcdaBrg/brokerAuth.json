@@ -1,0 +1,20 @@
+{
+  "auth": [
+    {
+      "username": "peach",
+      "password": "password1",
+      "allow": true,
+      "topics": {
+        "command": 1
+      }
+    },
+    {
+      "username": "melon",
+      "password": "password2",
+      "allow": true,
+      "topics": {
+        "command": 1
+      }
+    }
+  ]
+}
