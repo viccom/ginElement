@@ -1,6 +1,7 @@
 @echo off
+cd /d "%~dp0"
 REM 项目名称
-set PROJECT_NAME=goiot
+set PROJECT_NAME=opcdaBrg
 
 REM Go 编译器
 set GO=go
@@ -20,16 +21,19 @@ if exist %OUTPUT_DIR% (
 REM 创建输出目录
 mkdir %OUTPUT_DIR%
 
+REM 启用延迟变量扩展
+setlocal enabledelayedexpansion
+
 REM 遍历所有架构并编译
 for %%A in (%ARCHS%) do (
-    echo "Building for windows/%%A..."
-    mkdir %OUTPUT_DIR%\windows_%%A
     set GOARCH=%%A
     set GOOS=windows
     set CGO_ENABLED=0
-    %GO% build -ldflags="-s -w" -o %OUTPUT_DIR%\windows_%%A\%PROJECT_NAME%_win!GOARCH!.exe .
-    upx -9 %OUTPUT_DIR%\windows_%%A\%PROJECT_NAME%_win!GOARCH!.exe
+    echo Building for windows !GOARCH!...
+    %GO% build -ldflags="-s -w" -o %OUTPUT_DIR%\%PROJECT_NAME%_win!GOARCH!.exe .
+    upx -9 %OUTPUT_DIR%\%PROJECT_NAME%_win!GOARCH!.exe
 )
 
-echo "Build completed!"
+copy brokerAuth.json %OUTPUT_DIR%\
+echo Build completed!
 pause
