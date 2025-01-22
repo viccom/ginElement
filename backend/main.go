@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"ginElement/assistant"
 	_ "ginElement/docs"
 	"ginElement/handlers"
 	"ginElement/routes"
+	"github.com/astaxie/beego"
 	"github.com/gin-gonic/gin"
 	"github.com/nalgeon/redka"
 	"os"
@@ -132,6 +134,17 @@ func main() {
 			startWorker(handlers.IotappMap[appconfig.AppCode], cfgdb, rtdb, appconfig.InstID)
 		}
 	}
+	// Initialize beego
+	beego.BConfig.RunMode = beego.PROD
+	beego.BConfig.CopyRequestBody = true
+
+	// 启动npc客户端
+	if err := assistant.NpcRun(); err != nil {
+		log.Printf("Failed to start NPC client: %v", err)
+		return
+	}
+
+	// 启动WEB浏览器
 	startweb := *startWeb
 	if startweb == "1" {
 		url := "http://localhost:" + *port

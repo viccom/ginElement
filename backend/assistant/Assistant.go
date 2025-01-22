@@ -1,51 +1,32 @@
 package assistant
 
 import (
-	"github.com/gorilla/websocket"
-	"io/ioutil"
-	"log"
-	"net/http"
+	"ehang.io/nps/client"
+	"github.com/astaxie/beego/logs"
 	"time"
 )
 
-func forwardRequestToLocalServer(localURL string, path string) ([]byte, error) {
-	// 将请求转发到本地Web服务
-	resp, err := http.Get(localURL + path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
-}
+var (
+	serverAddr     = "nps.metme.top:7088"
+	verifyKey      = "84dce5a776bf44bba953aaf2f108fbda"
+	connType       = "tcp"
+	disconnectTime = 60
+)
 
-func reconnect(wsURL string, conn *websocket.Conn, UUID string, Port string) {
-	dialer := websocket.Dialer{}
-	for {
-		var err error
-		conn, _, err = dialer.Dial(wsURL, nil)
-		if err != nil {
-			log.Println("重连失败，正在重试...")
+func NpcRun() error {
+	go func() {
+		for {
+			rpClient := client.NewRPClient(serverAddr, verifyKey, connType, "", nil, disconnectTime)
+			// Start() doesn't return an error but we can still log if the rpClient is nil
+			if rpClient == nil {
+				logs.Error("Failed to create NPC rpClient")
+			} else {
+				rpClient.Start()
+			}
+			logs.Info("Client closed! It will be reconnected in five seconds")
 			time.Sleep(time.Second * 5)
-			continue
 		}
-		// 重新发送注册信息
-		regMsg := struct {
-			UUID string `json:"uuid"`
-			Port string `json:"port"`
-		}{
-			UUID: UUID,
-			Port: Port,
-		}
-		err = conn.WriteJSON(regMsg)
-		if err != nil {
-			log.Println("重新发送注册信息失败:", err)
-			continue
-		}
-		log.Println("Reconnected to server")
-		break
-	}
+	}()
+
+	return nil
 }
