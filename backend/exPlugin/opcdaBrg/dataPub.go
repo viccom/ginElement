@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func dataPub() {
+func dataPub(pubID string) {
 	defer wg.Done()
 	for {
 		select {
@@ -24,7 +24,8 @@ func dataPub() {
 					log.Println("Error marshaling data:", err)
 					continue
 				}
-				if token := mqttClient.client.Publish(mqttClient.topic, 0, false, jsonData); token.Wait() && token.Error() != nil {
+
+				if token := mqttClient.client.Publish(pubID+"/data", 0, false, jsonData); token.Wait() && token.Error() != nil {
 					log.Println("Error publishing data:", token.Error())
 				} else {
 					log.Printf("Published data to %s topic: %s\n", mqttClient.topic, string(jsonData))
@@ -83,7 +84,6 @@ func newMQTTClient(broker string, clientID string, userName string, passWord str
 
 	return &MQTTClient{
 		client: client,
-		topic:  "device",
 	}
 }
 
@@ -106,7 +106,7 @@ func handleCommand(client mqtt.Client, msg mqtt.Message) {
 			pubStopChan = make(chan struct{})
 			wg.Add(2)
 			go dataSim()
-			go dataPub()
+			go dataPub(hwid)
 			log.Println("Started data simulation and publishing")
 		}
 	} else {
