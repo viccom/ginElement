@@ -86,39 +86,3 @@ func newMQTTClient(broker string, clientID string, userName string, passWord str
 		client: client,
 	}
 }
-
-func handleCommand(client mqtt.Client, msg mqtt.Message) {
-	log.Printf("Received command: %s\n", string(msg.Payload()))
-
-	var cmd struct {
-		Start bool `json:"start"`
-	}
-	if err := json.Unmarshal(msg.Payload(), &cmd); err != nil {
-		log.Println("Error parsing command:", err)
-		return
-	}
-
-	if cmd.Start {
-		if !simRunning {
-			simRunning = true
-			pubRunning = true
-			simStopChan = make(chan struct{})
-			pubStopChan = make(chan struct{})
-			wg.Add(2)
-			go dataSim()
-			go dataPub(hwid)
-			log.Println("Started data simulation and publishing")
-		}
-	} else {
-		if simRunning {
-			close(simStopChan)
-			close(pubStopChan)
-			wg.Wait()
-			simRunning = false
-			pubRunning = false
-			log.Println("Stopped data simulation and publishing")
-		} else {
-			log.Println("No running simulation to stop")
-		}
-	}
-}

@@ -42,12 +42,6 @@ func startLocalApi() {
 			return
 		}
 
-		hwid, err := GetHardwareID()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		sysinfo := map[string]string{
 			"hwid":    hwid,
 			"version": version,
