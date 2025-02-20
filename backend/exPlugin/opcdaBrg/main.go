@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	mqBroker "github.com/mochi-mqtt/server/v2"
 	"log"
 	"net/http"
+	"opcdaBrg/pluginM"
+	_ "opcdaBrg/pluginM" // 导入插件包
+	_ "opcdaBrg/plugins" // 导入插件包
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 	"syscall"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	mqBroker "github.com/mochi-mqtt/server/v2"
 )
 
 type SafeQueue struct {
@@ -67,9 +69,11 @@ func main() {
 	defer stopLocalApi()
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
+	stopChan := pluginM.StopChan
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigs
+		close(stopChan)
 		done <- true
 	}()
 
@@ -81,6 +85,15 @@ func main() {
 	password := flag.String("password", "password2", "MQTT password")
 	path := flag.String("path", "brokerAuth.json", "path to mqttBroker auth file")
 	flag.Parse()
+
+	// 使用插件
+	if p, exists := pluginM.GetPlugin("HelloPlugin"); exists {
+		a := map[string]string{}
+		b := map[string]map[string][]any{}
+		go p.Execute(a, b)
+	} else {
+		fmt.Println("Plugin not found")
+	}
 
 	var mqServer *mqBroker.Server
 	var err error
@@ -164,7 +177,14 @@ func handleCommand(client mqtt.Client, msg mqtt.Message) {
 				simStopChan = make(chan struct{})
 				pubStopChan = make(chan struct{})
 				wg.Add(2)
-				go dataSim(cmd.AppConfig, cmd.Devices)
+				if p, exists := pluginM.GetPlugin("HelloPlugin"); exists {
+					a := map[string]string{}
+					b := map[string]map[string][]any{}
+					go p.Execute(a, b)
+				} else {
+					fmt.Println("Plugin not found")
+				}
+				//go dataSim(cmd.AppConfig, cmd.Devices)
 				go dataPub(hwid)
 				log.Println("Started data simulation and publishing")
 			}
