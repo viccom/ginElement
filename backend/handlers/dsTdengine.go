@@ -193,6 +193,11 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				return false
 			}
 			log.Printf("Connected to TDengine successfully")
+			// create database
+			_, err := db.Exec("CREATE DATABASE IF NOT EXISTS " + database)
+			if err != nil {
+				log.Printf("Failed to create database %v, ErrMessage: %v", database, err.Error())
+			}
 			for _, v := range deviceList {
 				values, _ := cfgdb.Hash().Items(v)
 				newtag := make(map[string][]any)
