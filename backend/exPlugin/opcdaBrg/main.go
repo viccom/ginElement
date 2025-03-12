@@ -129,6 +129,7 @@ func handleCommand(client mqtt.Client, msg mqtt.Message) {
 		AppConfig map[string]string           `json:"appconfig"`
 		Devices   map[string]map[string][]any `json:"devices"`
 	}
+	var cmdJSON []byte
 	if err := json.Unmarshal(msg.Payload(), &cmd); err != nil {
 		log.Println("Error parsing command:", err)
 		return
@@ -153,11 +154,7 @@ func handleCommand(client mqtt.Client, msg mqtt.Message) {
 			"reason": reason,
 			"cmd":    cmd,
 		}
-		cmdJSON, _ := json.Marshal(result)
-		if token := mqttClient.client.Publish(hwid+"/command/result", 0, false, cmdJSON); token.Wait() && token.Error() != nil {
-			log.Println("Error sending command:", token.Error())
-		}
-		return
+		cmdJSON, _ = json.Marshal(result)
 	}
 	if cmd.Start {
 		fmt.Printf("cmd.Ver: %+v, appVer: %+v\n", cmd.Ver, appVer)
@@ -194,10 +191,7 @@ func handleCommand(client mqtt.Client, msg mqtt.Message) {
 				"reason": "new version is updated",
 				"cmd":    cmd,
 			}
-			cmdJSON, _ := json.Marshal(result)
-			if token := mqttClient.client.Publish(hwid+"/command/result", 0, false, cmdJSON); token.Wait() && token.Error() != nil {
-				log.Println("Error sending command:", token.Error())
-			}
+			cmdJSON, _ = json.Marshal(result)
 		} else {
 			// 发送返回消息
 			result := map[string]any{
@@ -205,10 +199,12 @@ func handleCommand(client mqtt.Client, msg mqtt.Message) {
 				"reason": "current version " + strconv.Itoa(appVer) + " is newest",
 				"cmd":    cmd,
 			}
-			cmdJSON, _ := json.Marshal(result)
-			if token := mqttClient.client.Publish(hwid+"/command/result", 0, false, cmdJSON); token.Wait() && token.Error() != nil {
-				log.Println("Error sending command:", token.Error())
-			}
+			cmdJSON, _ = json.Marshal(result)
+
 		}
+
+	}
+	if token := client.Publish(hwid+"/command/result", 0, false, cmdJSON); token.Wait() && token.Error() != nil {
+		log.Println("Error sending command:", token.Error())
 	}
 }
