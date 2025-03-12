@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/nalgeon/redka"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/nalgeon/redka"
 )
 
 type testFunc func(id string, stopChan chan struct{})
@@ -32,11 +33,12 @@ var (
 	// 定义字符串数组
 	iotappCode = []string{"simulator", "modbus", "opcda", "opcua", "mqttpub"}
 	IotappMap  = map[string]iotFunc{
-		"simulator": Simulator,
-		"modbus":    ModbusRead,
-		"opcda":     OpcDARead,
-		"opcua":     OpcUARead,
-		"mqttpub":   mqttPubData,
+		"simulator":  Simulator,
+		"modbus":     ModbusRead,
+		"opcda":      OpcDARead,
+		"opcua":      OpcUARead,
+		"mqttpub":    mqttPubData,
+		"dsTDengine": dsTDengine,
 	}
 	reconnectDelay = 5 * time.Second // 重连延迟
 

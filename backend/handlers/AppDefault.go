@@ -68,6 +68,26 @@ var (
 				},
 			},
 		},
+		"dsTdengine": {
+			"appCode":   "dsTdengine",
+			"appType":   "toNorth",
+			"instId":    "",
+			"instName":  "dsTdengine app",
+			"autoStart": false,
+			"config": map[string]any{
+				"host":     "localhost",
+				"port":     1883,
+				"username": "username",
+				"password": "password",
+				"database": "db01",
+				"tbType":   "table",
+				"cycle":    5,
+				"deviceList": []string{
+					"DEV_7JF3ZMbgvQfvAYpo",
+					"DEV_657ZMbgvQ4368Ypo",
+				},
+			},
+		},
 	}
 
 	tags_default = map[string]map[string]any{
@@ -77,8 +97,8 @@ var (
 			"tagsMap": map[string]any{
 				"bool1":    []any{"bool1", "布尔量1", 1, "01", 0, "bool"},
 				"analog1":  []any{"analog1", "模拟量1", 1, "03", 0, "float32"},
-				"digital1": []any{"digital1", "数字量1", 1, "03", 0, "int16"},
-				"digital2": []any{"digital2", "数字量2", 1, "04", 0, "int32"},
+				"digital1": []any{"digital1", "数字量1", 1, "03", 2, "int16"},
+				"digital2": []any{"digital2", "数字量2", 1, "04", 4, "int32"},
 			},
 		},
 		"opcda": {

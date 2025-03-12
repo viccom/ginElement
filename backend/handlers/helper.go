@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"math/rand"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"unicode"
@@ -287,4 +288,23 @@ func appHasTag(id string, cfgdb *redka.DB) (bool, string) {
 		return false, fmt.Sprintf("instid %v has tag", id)
 	}
 	return true, fmt.Sprintf("instid %v no tag", id)
+}
+
+func GetTypeString(v interface{}) string {
+	switch v.(type) {
+	case bool:
+		return "bool"
+	case int:
+		return "int"
+	case int64:
+		return "int64"
+	case float32:
+		return "float"
+	case float64:
+		return "double"
+	case string:
+		return "string"
+	default:
+		return reflect.TypeOf(v).String()
+	}
 }

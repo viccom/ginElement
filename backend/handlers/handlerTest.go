@@ -167,7 +167,7 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 							value = pickRandomElement(stringArr)
 						}
 
-						valueMap := []any{formattedDate, value, unixMilliTimestamp}
+						valueMap := []any{formattedDate, value, unixMilliTimestamp, GetTypeString(value)}
 						valueMapJson, _ := json.Marshal(valueMap)
 						datasmap[tagkey] = valueMapJson
 

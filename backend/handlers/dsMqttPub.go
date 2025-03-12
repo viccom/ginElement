@@ -120,6 +120,11 @@ func mqttPubData(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka
 				fmt.Println("生产者收到停止信号，退出")
 				return
 			default:
+				if queue.Len() > 1000 {
+					log.Printf("队列长度超过1000，等待消费")
+					time.Sleep(1 * time.Second)
+					continue
+				}
 				OutterMap := make(map[string]map[string][]any)
 				for devkey := range devMap {
 					values, erra := rtdb.Hash().Items(devkey)
@@ -197,7 +202,9 @@ func mqttPubData(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka
 
 					}
 				}
-				time.Sleep(time.Duration(cycle) * time.Second)
+				if queue.Len() == 0 {
+					time.Sleep(time.Duration(cycle) * time.Second)
+				}
 			}
 		}
 	}()

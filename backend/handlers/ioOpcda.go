@@ -150,7 +150,7 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					//quality := uint8(data.Qualities[i])
 					//fmt.Printf("data : %s %s %d %s %d\n", opcitem, timestampstr, quality, valueStr, unixTime)
 					//	将数据增加到设备数据集合中
-					valueMap := []any{timestampstr, data.Values[i], unixTime}
+					valueMap := []any{timestampstr, data.Values[i], unixTime, GetTypeString(data.Values[i])}
 					valueMapJson, _ := json.Marshal(valueMap)
 					devkey := opcParent[opcitem]
 					if datasmap[devkey] == nil {

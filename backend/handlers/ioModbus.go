@@ -234,7 +234,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				}
 
 				tagid := m[0]
-				valueMap := []any{formattedDate, value, unixMilliTimestamp}
+				valueMap := []any{formattedDate, value, unixMilliTimestamp, GetTypeString(value)}
 				valueMapJson, _ := json.Marshal(valueMap)
 				devkey := mbParent[tagid]
 				if datasmap[devkey] == nil {

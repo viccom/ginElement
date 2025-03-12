@@ -265,7 +265,7 @@ func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag
 			if msg.Error != nil {
 				log.Printf("[callback] sub=%d error=%s", s.SubscriptionID(), msg.Error)
 			} else {
-				valueMap := []any{msg.NodeID, msg.ServerTimestamp.Local().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix()}
+				valueMap := []any{msg.NodeID, msg.ServerTimestamp.Local().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix(), GetTypeString(msg.Value.Value())}
 				valueMapJson, _ := json.Marshal(valueMap)
 				queue.Enqueue(string(valueMapJson))
 			}
