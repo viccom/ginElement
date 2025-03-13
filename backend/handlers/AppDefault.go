@@ -68,15 +68,15 @@ var (
 				},
 			},
 		},
-		"dsTdengine": {
-			"appCode":   "dsTdengine",
+		"dsTDengine": {
+			"appCode":   "dsTDengine",
 			"appType":   "toNorth",
 			"instId":    "",
-			"instName":  "dsTdengine app",
+			"instName":  "dsTDengine app",
 			"autoStart": false,
 			"config": map[string]any{
-				"host":     "localhost",
-				"port":     1883,
+				"host":     "localhost or ip",
+				"port":     6041,
 				"username": "username",
 				"password": "password",
 				"database": "db01",

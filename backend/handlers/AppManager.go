@@ -54,7 +54,7 @@ func GetAppDefault(c *gin.Context) {
 	var newValue = make(map[string]any)
 	newValue["appConfig"] = app_default[appcode]
 	newValue["devTags"] = tags_default[appcode]
-	if isEmptyMap(newValue["appConfig"]) || isNil(newValue["devTags"]) {
+	if isEmptyMap(newValue["appConfig"]) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "appCode is not exist",
 		})

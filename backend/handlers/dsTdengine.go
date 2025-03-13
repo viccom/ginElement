@@ -120,7 +120,7 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	}
 
 	// 构建TDengine连接DSN
-	taosDSN := fmt.Sprintf("%s:%s@ws(%s:%d)/%s", username, password, host, int(port), database)
+	taosDSN := fmt.Sprintf("%s:%s@ws(%s:%d)/", username, password, host, int(port))
 
 	// 创建队列
 	queue := NewDataQueue()
@@ -179,8 +179,8 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 			if db != nil {
 				db.Close()
 			}
-
-			db, err = sql.Open("taosWs", taosDSN)
+			log.Printf("taosDSN: %v", taosDSN)
+			db, err = sql.Open("taosWS", taosDSN)
 			if err != nil {
 				log.Printf("Failed to connect to TDengine: %v", err)
 				return false
@@ -198,6 +198,14 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 			if err != nil {
 				log.Printf("Failed to create database %v, ErrMessage: %v", database, err.Error())
 			}
+			// 选择数据库
+			_, err = db.Exec("USE " + database)
+			if err != nil {
+				log.Printf("Failed to select database %v: %v", database, err)
+				return false
+			}
+			log.Printf("Database %v selected successfully", database)
+
 			for _, v := range deviceList {
 				values, _ := cfgdb.Hash().Items(v)
 				newtag := make(map[string][]any)
@@ -210,12 +218,15 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 					}
 					newtag[key] = newValue
 				}
-				sqlstr := CreateTableSQL(newtag)
-				// create table
-				_, err = db.Exec(sqlstr)
-				if err != nil {
-					log.Println("Failed to create stable ErrMessage: " + err.Error())
-					return false
+				sqlstrs := CreateTableSQL(v, newtag)
+				for _, sqlstr := range sqlstrs {
+					//log.Printf("sqlstr: %v", sqlstr)
+					// create table
+					_, err = db.Exec(sqlstr)
+					if err != nil {
+						log.Println("Failed to create stable ErrMessage: " + err.Error())
+						return false
+					}
 				}
 			}
 
@@ -250,6 +261,7 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				// 处理队列中的数据
 				for queue.Len() > 0 {
 					if val, ok := queue.Dequeue(); ok {
+						//log.Printf("从队列中取出数据: %s", val) // 新增日志，确认队列数据
 						var datasmap map[string]map[string][]any
 						errc := json.Unmarshal([]byte(val), &datasmap)
 						if errc != nil {
@@ -257,14 +269,23 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 							continue
 						}
 
+						// 检查 datasmap 是否为空
+						if len(datasmap) == 0 {
+							log.Println("解析后的设备数据为空，跳过处理")
+							continue
+						}
+
 						// 遍历设备数据
 						for devkey, deviceData := range datasmap {
-							println(devkey, deviceData)
-							err := WriteTable(db, deviceData)
+							//log.Printf("处理设备数据 - devkey: %s, deviceData: %+v", devkey, deviceData) // 新增日志，确认设备数据
+							err := WriteTable(db, devkey, deviceData)
 							if err != nil {
-								return
+								log.Printf("写入 TDengine 失败: %v", err)
+								continue
 							}
 						}
+					} else {
+						log.Println("队列数据取出失败")
 					}
 				}
 				if queue.Len() == 0 {
@@ -285,7 +306,7 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 }
 
 // 构建创建超级表的 SQL 语句
-func CreateSuperTableSQL(tableName, devID string, fields map[string][]any) string {
+func CreateSuperTableSQL(tableName, devType string, fields map[string][]any) string {
 	// 定义字段映射关系（JSON 数据类型 -> TDengine 数据类型）
 	typeMapping := map[string]string{
 		"float":  "float",
@@ -307,7 +328,7 @@ func CreateSuperTableSQL(tableName, devID string, fields map[string][]any) strin
 	// 拼接完整的 SQL 语句
 	sqlexc := fmt.Sprintf(
 		"CREATE STABLE IF NOT EXISTS %s(\n    %s\n) TAGS (\n    %s\n);",
-		tableName,
+		devType,
 		strings.Join(fieldParts, ",\n    "),
 		tagsPart,
 	)
@@ -315,7 +336,7 @@ func CreateSuperTableSQL(tableName, devID string, fields map[string][]any) strin
 }
 
 // 构建创建普通表的 SQL 语句
-func CreateTableSQL(fields map[string][]any) string {
+func CreateTableSQL(devid string, fields map[string][]any) []string {
 	// 定义字段映射关系（JSON 数据类型 -> TDengine 数据类型）
 	typeMapping := map[string]string{
 		"float":  "float",
@@ -331,39 +352,52 @@ func CreateTableSQL(fields map[string][]any) string {
 		tdengineType := typeMapping[dataType]
 		sqlexc := fmt.Sprintf(
 			"CREATE TABLE IF NOT EXISTS %s(\n    ts timestamp,\n    v %s\n);",
-			tableName,
+			devid+"_"+tableName,
 			tdengineType,
 		)
 		sqlParts = append(sqlParts, sqlexc)
 	}
-	// 拼接所有 SQL 语句
-	return strings.Join(sqlParts, "\n")
+	return sqlParts
 }
 
 // 写入数据到 TDengine 普通表
-func WriteTable(db *sql.DB, data map[string][]any) error {
+func WriteTable(db *sql.DB, devid string, data map[string][]any) error {
 	var sqlBuilder strings.Builder
 	// 遍历 JSON 数据
 	for tableName, values := range data {
 		// 解析值
-		tsStr := values[0].(string) // 时间戳字符串
-		v := values[1]              // 值
-		//tsInt := values[2].(float64) // 时间戳（毫秒）
-		// 将时间戳字符串转换为 time.Time
-		ts, err := time.Parse("2006-01-02 15:04:05", tsStr)
-		if err != nil {
-			return fmt.Errorf("解析时间戳失败: %v", err)
+		v := values[1] // 值
+		tsFloat := values[2].(float64)
+		var tsInt = int64(tsFloat)
+		// 判断时间戳单位
+		if tsInt <= 1e12 { // 毫秒级时间戳（13位）
+			tsInt = tsInt * 1000
 		}
+		//tsStr := values[0].(string) // 时间戳字符串
+		// 将时间戳字符串转换为 time.Time
+		//ts, err := time.Parse("2006-01-02 15:04:05", tsStr)
+		//if err != nil {
+		//	return fmt.Errorf("解析时间戳失败: %v", err)
+		//}
 		// 构建 SQL 插入语句
-		sqlexc := fmt.Sprintf("INSERT INTO %s (ts, v) VALUES ('%s', %v)", tableName, ts.Format(time.RFC3339), v)
-		sqlBuilder.WriteString(sqlexc + "\n")
+		var sqlexc string
+		sqlexc = fmt.Sprintf("INSERT INTO %s (ts, v) VALUES (%d, %v)", devid+"_"+tableName, tsInt, v)
+		if GetTypeString(v) == "string" {
+			sqlexc = fmt.Sprintf("INSERT INTO %s (ts, v) VALUES (%d, '%v')", devid+"_"+tableName, tsInt, v)
+		}
+		//log.Printf("SQL 语句: %s", sqlexc)
+		//_, erra := db.Exec(sqlexc)
+		//if erra != nil {
+		//	log.Printf("erra : %v", erra)
+		//}
+		sqlBuilder.WriteString(sqlexc + ";\n")
 	}
 	// 执行批量插入
 	batchSQL := sqlBuilder.String()
-	fmt.Printf("批量插入 SQL 语句:\n%s\n", batchSQL)
-	_, err := db.Exec(batchSQL)
-	if err != nil {
-		return fmt.Errorf("批量插入失败: %v", err)
+	//fmt.Printf("批量插入 SQL 语句:\n%s\n", batchSQL)
+	_, erra := db.Exec(batchSQL)
+	if erra != nil {
+		return fmt.Errorf("批量插入失败: %v", erra)
 	}
 
 	return nil
