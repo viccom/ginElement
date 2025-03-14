@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"unicode"
@@ -307,4 +308,12 @@ func GetTypeString(v interface{}) string {
 	default:
 		return reflect.TypeOf(v).String()
 	}
+}
+
+// ReplaceChars 替换字符串中非英文字符、数字、下划线的字符为 "_"
+func ReplaceChars(input string, dChar string) string {
+	// 定义正则表达式，匹配非英文字符、数字、下划线的内容
+	re := regexp.MustCompile(`[^a-zA-Z0-9_]`)
+	// 使用 "_" 替换匹配到的字符
+	return re.ReplaceAllString(input, dChar)
 }

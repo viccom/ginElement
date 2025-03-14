@@ -265,16 +265,32 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 
-	// 生成一个新的16位 UUID
+	// 获取inst UUID
 	uuidstr := appConfig.InstID
+	if uuidstr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "instId is nil",
+			"details": fmt.Sprintf("instId '%s' is nil", uuidstr),
+		})
+		return
+	}
+	isExist, _ := cfgdb.Hash().Exists(InstListKey, uuidstr)
+	if !isExist {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid instId",
+			"details": fmt.Sprintf("instId '%s' is not exist", uuidstr),
+		})
+		return
+	}
+
 	jsonstr, _ := json.Marshal(appConfig)
 	// 打印 anyConfig
-	//fmt.Printf("anyConfig: %+v\n", jsonstr)
-	_, err := cfgdb.Hash().Set(InstListKey, uuidstr, jsonstr)
-	if err != nil {
+	fmt.Printf("appConfig: %+v\n", jsonstr)
+	_, errb := cfgdb.Hash().Set(InstListKey, uuidstr, jsonstr)
+	if errb != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "New App Creat Fail",
-			"details": fmt.Sprintf("err: '%v' ", err),
+			"details": fmt.Sprintf("err: '%v' ", errb),
 		})
 		return
 	}

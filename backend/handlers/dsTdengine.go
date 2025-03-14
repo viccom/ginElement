@@ -117,6 +117,8 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 	if len(devMap) == 0 {
 		fmt.Printf("no match device in %+v\n", deviceList)
 		return
+	} else {
+		fmt.Printf("match device in %+v\n", deviceList)
 	}
 
 	// 构建TDengine连接DSN
@@ -220,11 +222,11 @@ func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				}
 				sqlstrs := CreateTableSQL(v, newtag)
 				for _, sqlstr := range sqlstrs {
-					//log.Printf("sqlstr: %v", sqlstr)
+					log.Printf("sqlstr: %v", sqlstr)
 					// create table
 					_, err = db.Exec(sqlstr)
 					if err != nil {
-						log.Println("Failed to create stable ErrMessage: " + err.Error())
+						log.Println("Failed to create table ErrMessage: " + err.Error())
 						return false
 					}
 				}
@@ -348,6 +350,7 @@ func CreateTableSQL(devid string, fields map[string][]any) []string {
 	var sqlParts []string
 	for tableName, fieldInfo := range fields {
 		//info := fieldInfo.([]any)
+		tableName = ReplaceChars(tableName, "_")
 		dataType := fieldInfo[2].(string) // 获取数据类型
 		tdengineType := typeMapping[dataType]
 		sqlexc := fmt.Sprintf(
@@ -366,6 +369,7 @@ func WriteTable(db *sql.DB, devid string, data map[string][]any) error {
 	// 遍历 JSON 数据
 	for tableName, values := range data {
 		// 解析值
+		tableName = ReplaceChars(tableName, "_")
 		v := values[1] // 值
 		tsFloat := values[2].(float64)
 		var tsInt = int64(tsFloat)

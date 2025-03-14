@@ -3,10 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/nalgeon/redka"
 	"log"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/nalgeon/redka"
 )
 
 // mqttPubData 函数：周期性地读取modbus设备数据
@@ -129,7 +130,7 @@ func mqttPubData(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka
 				for devkey := range devMap {
 					values, erra := rtdb.Hash().Items(devkey)
 					if erra != nil {
-						log.Printf("Error reading from database: ", erra)
+						log.Printf("Error reading from database: %+v", erra)
 						continue
 					}
 					if len(values) == 0 {
