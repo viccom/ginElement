@@ -177,12 +177,13 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 	delResult := make(map[string]string)
 	delError := make([]string, 0)
 	for _, devid := range devlist {
-		_, err := cfgdb.Hash().Delete(DevAtInstKey, devid)
+		devidstr := devid
+		_, err := cfgdb.Hash().Delete(DevAtInstKey, devidstr)
 		if err != nil {
-			delResult[devid] = err.Error()
-			delError = append(delError, devid)
+			delResult[devidstr] = err.Error()
+			delError = append(delError, devidstr)
 		} else {
-			delResult[devid] = "Delete OK"
+			delResult[devidstr] = "Delete OK"
 		}
 
 	}
@@ -271,7 +272,8 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 	for i := 0; i < len(devOpt.DevList); i++ {
 		//fmt.Printf("Index: %d, Value: %d\n", i, numbers[i])
 		devid := devOpt.DevList[i]
-		values, err3 := cfgdb.Hash().Items(devid)
+		devidstr := devid
+		values, err3 := cfgdb.Hash().Items(devidstr)
 		if err3 != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "Get tags Fail",
@@ -279,9 +281,9 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 			})
 		}
 		if len(values) != 0 {
-			newtag := make(map[string][]string)
+			newtag := make(map[string][]interface{})
 			for key, value := range values {
-				var newValue []string
+				var newValue []interface{}
 				erra := json.Unmarshal([]byte(value.String()), &newValue)
 				if erra != nil {
 					fmt.Println("Error unmarshalling JSON:", erra)
@@ -289,7 +291,7 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 				}
 				newtag[key] = newValue
 			}
-			newtags[devid] = newtag
+			newtags[devidstr] = newtag
 		}
 	}
 	if len(newtags) == 0 {
