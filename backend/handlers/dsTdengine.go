@@ -377,23 +377,13 @@ func WriteTable(db *sql.DB, devid string, data map[string][]any) error {
 		if tsInt <= 1e12 { // 毫秒级时间戳（13位）
 			tsInt = tsInt * 1000
 		}
-		//tsStr := values[0].(string) // 时间戳字符串
-		// 将时间戳字符串转换为 time.Time
-		//ts, err := time.Parse("2006-01-02 15:04:05", tsStr)
-		//if err != nil {
-		//	return fmt.Errorf("解析时间戳失败: %v", err)
-		//}
-		// 构建 SQL 插入语句
+
 		var sqlexc string
 		sqlexc = fmt.Sprintf("INSERT INTO %s (ts, v) VALUES (%d, %v)", devid+"_"+tableName, tsInt, v)
 		if GetTypeString(v) == "string" {
+			v = strings.ReplaceAll(v.(string), "'", "''")
 			sqlexc = fmt.Sprintf("INSERT INTO %s (ts, v) VALUES (%d, '%v')", devid+"_"+tableName, tsInt, v)
 		}
-		//log.Printf("SQL 语句: %s", sqlexc)
-		//_, erra := db.Exec(sqlexc)
-		//if erra != nil {
-		//	log.Printf("erra : %v", erra)
-		//}
 		sqlBuilder.WriteString(sqlexc + ";\n")
 	}
 	// 执行批量插入
@@ -401,6 +391,7 @@ func WriteTable(db *sql.DB, devid string, data map[string][]any) error {
 	//fmt.Printf("批量插入 SQL 语句:\n%s\n", batchSQL)
 	_, erra := db.Exec(batchSQL)
 	if erra != nil {
+		fmt.Printf("批量插入 SQL 语句:\n%s\n", batchSQL)
 		return fmt.Errorf("批量插入失败: %v", erra)
 	}
 
