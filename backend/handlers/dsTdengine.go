@@ -12,7 +12,7 @@ import (
 	_ "github.com/taosdata/driver-go/v3/taosWS"
 )
 
-// tdengineWriteData 函数：周期性地读取redka数据并写入TDengine
+// dsTDengine 函数：周期性地读取 redka 数据并写入TDengine
 func dsTDengine(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.DB) {
 	//通过ID(实例ID)获取实例的配置信息
 	appconfig, err := cfgdb.Hash().Get(InstListKey, id)

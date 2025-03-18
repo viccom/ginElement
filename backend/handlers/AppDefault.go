@@ -88,6 +88,24 @@ var (
 				},
 			},
 		},
+		"dsInfluxdb": {
+			"appCode":   "dsInfluxdb",
+			"appType":   "toNorth",
+			"instId":    "",
+			"instName":  "dsInfluxdb app",
+			"autoStart": false,
+			"config": map[string]any{
+				"host":   "Influxdb_url",
+				"token":  "username",
+				"org":    "org",
+				"bucket": "bucket",
+				"cycle":  5,
+				"deviceList": []string{
+					"DEV_7JF3ZMbgvQfvAYpo",
+					"DEV_657ZMbgvQ4368Ypo",
+				},
+			},
+		},
 	}
 
 	tags_default = map[string]map[string]any{

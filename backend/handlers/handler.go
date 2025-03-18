@@ -31,7 +31,7 @@ var (
 		"periodicPrint": PeriodicPrint,
 	}
 	// 定义字符串数组
-	iotappCode = []string{"simulator", "modbus", "opcda", "opcua", "mqttpub", "dsTDengine"}
+	iotappCode = []string{"simulator", "modbus", "opcda", "opcua", "mqttpub", "dsTDengine", "dsInfluxdb"}
 	IotappMap  = map[string]iotFunc{
 		"simulator":  Simulator,
 		"modbus":     ModbusRead,
@@ -39,6 +39,7 @@ var (
 		"opcua":      OpcUARead,
 		"mqttpub":    mqttPubData,
 		"dsTDengine": dsTDengine,
+		"dsInfluxdb": dsInfluxdb,
 	}
 	reconnectDelay = 5 * time.Second // 重连延迟
 
