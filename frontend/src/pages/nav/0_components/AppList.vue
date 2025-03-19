@@ -144,7 +144,7 @@ function cancelDelete() {
           v-if="scope.row.isRunning === false"
           size="small"
           type="success"
-          @click="emit('start-click', scope.row)"
+          @click="emit('start-click', scope.row.instName, scope.row.instId, scope.row.isRunning)"
         >
           启动
         </el-button>
@@ -152,7 +152,7 @@ function cancelDelete() {
           v-if="scope.row.isRunning === true"
           size="small"
           type="warning"
-          @click="emit('stop-click', scope.row)"
+          @click="emit('stop-click', scope.row.instName, scope.row.instId, scope.row.isRunning)"
         >
           停止
         </el-button>
