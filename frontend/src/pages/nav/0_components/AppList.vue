@@ -139,7 +139,7 @@ function cancelDelete() {
     </el-table-column>
     <el-table-column label="操作">
       <template #default="scope">
-        <el-button size="small" @click="emit('edit-click', scope.row)">编辑</el-button>
+        <el-button size="small" @click="emit('edit-click', scope.row.instName, scope.row.instId)">编辑</el-button>
         <el-button
           v-if="scope.row.isRunning === false"
           size="small"

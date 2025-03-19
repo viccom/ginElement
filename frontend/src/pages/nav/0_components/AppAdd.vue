@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { defineEmits, onMounted, ref } from 'vue'
+
+const emit = defineEmits(['closeTab']) // 修改事件名为 camelCase
 
 const appCodes = ref<string[]>([])
 const formData = ref({
@@ -79,10 +82,16 @@ async function submitForm() {
 
     if (response.status === 200) {
       ElMessage.success('提交成功')
-    } else {
+      // 提交成功后通知父组件关闭当前标签页
+      const apptabs_activeTab = localStorage.getItem('apptabs_activeTab')
+      console.log('触发关闭事件，参数：', apptabs_activeTab)
+      emit('closeTab', apptabs_activeTab)
+    }
+    else {
       ElMessage.error(`提交失败: ${response.data.details || '未知错误'}`)
     }
-  } catch (error) {
+  }
+  catch (error) {
     ElMessage.error(`提交失败: ${error.response?.data?.details || '网络错误'}`)
   }
 }
@@ -94,7 +103,6 @@ onMounted(() => {
 
 <template>
   <el-form :model="formData" label-width="120px">
-
     <el-form-item label="应用编码">
       <el-select v-model="formData.appCode" placeholder="请选择应用" @change="fetchDefaultConfig">
         <el-option v-for="code in appCodes" :key="code" :label="code" :value="code" />
@@ -102,8 +110,8 @@ onMounted(() => {
     </el-form-item>
 
     <!-- 实例名称 -->
-    <el-form-item 
-      label="实例名称" 
+    <el-form-item
+      label="实例名称"
       :error="!formData.instName && '实例名称不能为空'"
     >
       <el-input v-model="formData.instName" />
@@ -117,8 +125,8 @@ onMounted(() => {
     </el-form-item>
 
     <!-- 配置 -->
-    <el-form-item 
-      label="配置" 
+    <el-form-item
+      label="配置"
       :error="!formData.config && '配置不能为空'"
     >
       <el-input
