@@ -88,9 +88,15 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 		})
 		return
 	}
+	type NewConfig struct {
+		AppConfig      // 嵌入 AppConfig 结构体
+		IsRunning bool `json:"isRunning"` // 新增字段
+	}
+	OutterMap := make(map[string]NewConfig)
 	if len(values) == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "no data",
+			"data":    OutterMap,
 		})
 		return
 	}
@@ -102,11 +108,7 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 	for id := range Workers {
 		ids = append(ids, id)
 	}
-	type NewConfig struct {
-		AppConfig      // 嵌入 AppConfig 结构体
-		IsRunning bool `json:"isRunning"` // 新增字段
-	}
-	OutterMap := make(map[string]NewConfig)
+
 	for key, value := range values {
 		var newValue AppConfig
 		erra := json.Unmarshal([]byte(value.String()), &newValue)
@@ -375,6 +377,7 @@ func StartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 	now := time.Now()
 	formattedDate := now.Format("2006-01-02 15:04:05")
 	// 检查 funcMap 中是否存在对应的函数
+	//fmt.Printf("%v , %v \n", appcode, instid)
 	fn, exists := IotappMap[appcode]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{

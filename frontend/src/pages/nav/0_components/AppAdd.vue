@@ -76,7 +76,11 @@ async function submitForm() {
   }
 
   try {
-    const response = await axios.post('/api/v1/newApp', formData.value, {
+    const postData = {
+      ...formData.value,
+      config: JSON.parse(formData.value.config)
+    }
+    const response = await axios.post('/api/v1/newApp', postData, {
       headers: { 'Content-Type': 'application/json' },
     })
 

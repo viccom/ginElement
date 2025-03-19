@@ -112,8 +112,6 @@ function cancelDelete() {
 </script>
 
 <template>
-
-
   <!-- 表格部分保持不变 -->
   <el-table :data="tableData" style="width: 100%">
     <el-table-column prop="instName" label="应用名称" width="180" />
@@ -132,14 +130,22 @@ function cancelDelete() {
     </el-table-column>
     <el-table-column prop="isRunning" label="运行状态" width="180">
       <template #default="scope">
-        <el-tag v-if="scope.row.isRunning === true" type="success">运行中</el-tag>
-        <el-tag v-else-if="scope.row.isRunning === false" type="danger">已停止</el-tag>
-        <el-tag v-else type="info">未知</el-tag>
+        <el-tag v-if="scope.row.isRunning === true" type="success">
+          运行中
+        </el-tag>
+        <el-tag v-else-if="scope.row.isRunning === false" type="danger">
+          已停止
+        </el-tag>
+        <el-tag v-else type="info">
+          未知
+        </el-tag>
       </template>
     </el-table-column>
     <el-table-column label="操作">
       <template #default="scope">
-        <el-button size="small" @click="emit('edit-click', scope.row.instName, scope.row.instId)">编辑</el-button>
+        <el-button size="small" @click="emit('edit-click', scope.row.instName, scope.row.instId)">
+          编辑
+        </el-button>
         <el-button
           v-if="scope.row.isRunning === false"
           size="small"
@@ -156,11 +162,12 @@ function cancelDelete() {
         >
           停止
         </el-button>
-        <el-button size="small" type="danger" @click="openDeleteDialog(scope.row.instName, scope.row.instId)">删除</el-button>
+        <el-button size="small" type="danger" @click="openDeleteDialog(scope.row.instName, scope.row.instId)">
+          删除
+        </el-button>
       </template>
     </el-table-column>
   </el-table>
-
 
   <div style="display: flex; align-items: center; margin-bottom: 10px;">
     <!-- 新增应用按钮 -->
