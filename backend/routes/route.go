@@ -57,6 +57,10 @@ func SetupRouter(r *gin.Engine, cfgdb *redka.DB, rtdb *redka.DB) {
 	r.POST("/api/v1/stopApp", func(c *gin.Context) {
 		handlers.StopApp(c)
 	})
+	// 重启App实例
+	r.POST("/api/v1/restartApp", func(c *gin.Context) {
+		handlers.RestartApp(c, cfgdb, rtdb)
+	})
 
 	// 设备管理
 	//查询设备列表

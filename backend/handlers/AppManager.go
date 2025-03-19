@@ -291,14 +291,14 @@ func ModApp(c *gin.Context, cfgdb *redka.DB) {
 	_, errb := cfgdb.Hash().Set(InstListKey, uuidstr, jsonstr)
 	if errb != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "New App Creat Fail",
+			"message": "App Modify Fail",
 			"details": fmt.Sprintf("err: '%v' ", errb),
 		})
 		return
 	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
-		"message": "New App Mod OK",
+		"message": "App Modify OK",
 		"data":    appConfig,
 	})
 }
@@ -466,6 +466,88 @@ func StopApp(c *gin.Context) {
 	// 返回成功消息
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Worker stopped",
+		"data":    instopt,
+	})
+}
+
+// @Summary 通过实例ID重启App实例
+// @Description 这是一个通过实例ID重启App实例的接口
+// @Tags APP Manager
+// @Accept json
+// @Produce json
+// @Param instid body InstInfo true "InstId"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /api/v1/restartApp [post]
+func RestartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
+	var instopt InstInfo
+	if err := c.ShouldBindJSON(&instopt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	instid := instopt.InstId
+
+	// 第一步：停止现有实例
+	workersLock.Lock()
+	defer workersLock.Unlock()
+	stopChan, exists := Workers[instid]
+	if exists {
+		close(stopChan)
+		delete(Workers, instid)
+	}
+	// 延时1秒
+	time.Sleep(1 * time.Second)
+	// 第二步：获取实例配置信息
+	value, err := cfgdb.Hash().Get(InstListKey, instid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to get app data",
+			"error":   err.Error(),
+		})
+		return
+	}
+	var appConfig AppConfig
+	err = json.Unmarshal([]byte(value.String()), &appConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to parse app config",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	appcode := appConfig.AppCode
+	isSupport, msg := appCheck(appcode)
+	if !isSupport {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": appcode + " not support",
+			"details": msg,
+		})
+		return
+	}
+
+	// 第三步：重新启动实例
+	stopChan = make(chan struct{})
+	Workers[instid] = stopChan
+
+	go func() {
+		defer func() {
+			select {
+			case <-stopChan:
+			default:
+				close(stopChan)
+			}
+			workersLock.Lock()
+			delete(Workers, instid)
+			workersLock.Unlock()
+			fmt.Printf("RestartApp提示：Worker退出,线程ID: %s 已从全局变量中删除\n", instid)
+		}()
+		fn := IotappMap[appcode]
+		fn(instid, stopChan, cfgdb, rtdb)
+	}()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Worker restarted",
 		"data":    instopt,
 	})
 }
