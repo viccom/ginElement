@@ -4,6 +4,7 @@ import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, ref, watch } from 'vue' // 引入 watch
 import { addTab, handleTabsEdit, initDefaultTab, restoreTabsFromLocalStorage, saveTabsToLocalStorage } from '~/utils/tabUtils'
+import AppAdd from './0_components/AppAdd.vue'
 import AppEditor from './0_components/AppEditor.vue'
 import AppList from './0_components/AppList.vue'
 
@@ -11,6 +12,7 @@ import AppList from './0_components/AppList.vue'
 const componentMap = {
   appList: AppList,
   appEditor: AppEditor,
+  appAdd: AppAdd, // 新增映射
 }
 
 // 定义 activeTab 和 tabs
@@ -45,7 +47,6 @@ watch(activeTab, (newActiveTab) => {
   // 保存TAB状态
   saveTabsToLocalStorage(tabs.value, newActiveTab, appPage_storageKey)
 })
-
 
 // 处理“编辑”按钮点击事件
 function handleEditClick(instName: string, instId: string) {
@@ -124,15 +125,52 @@ async function handleStopClick(instName: string, instId: string, isRunning: bool
 }
 
 // 处理“删除”按钮点击事件
-function handleDeleteClick(instName: string, instId: string) {
-  ElMessageBox.alert(`删除：应用名称=${instName}，应用ID=${instId}`, '提示', {
+async function handleDeleteClick(instName: string, instId: string) {
+  ElMessageBox.confirm(`确定要删除应用名称=${instName}，应用ID=${instId} 吗？`, '提示', {
     confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(async () => {
+    try {
+      // 发送删除请求
+      const response = await axios.post('/api/v1/delApp', {
+        instid: instId,
+      })
+
+      if (response.status === 200) {
+        ElMessage.success(`删除 ${instName} 应用成功`)
+      } else {
+        ElMessage.error(`删除 ${instName} 应用失败: ${response.data.details || '未知错误'}`)
+      }
+    } catch (error) {
+      ElMessage.error(`删除 ${instName} 应用失败: ${error.response?.data?.details || '网络错误'}`)
+    }
+  }).catch(() => {
+    // 用户点击取消按钮
+    ElMessage.info('已取消删除')
   })
 }
 
 // 处理标签页关闭
 function handleCloseTab(targetName: string) {
   const result = handleTabsEdit(tabs.value, activeTab.value, targetName, appPage_storageKey)
+  tabs.value = result.tabs
+  activeTab.value = result.activeTab
+
+  // 保存TAB状态
+  saveTabsToLocalStorage(tabs.value, activeTab.value, appPage_storageKey)
+}
+
+// 处理“新增应用”按钮点击事件
+function handleAddClick() {
+  const tabName = '新建应用'
+  const result = addTab(tabs.value, activeTab.value, tabName, 'appAdd', {
+    apiUrl: '', // 无需API URL
+  }, {
+    instName: '',
+    instId: '',
+    isRunning: false,
+  })
   tabs.value = result.tabs
   activeTab.value = result.activeTab
 
@@ -169,6 +207,7 @@ function handleCloseTab(targetName: string) {
         @stop-click="handleStopClick"
         @delete-click="handleDeleteClick"
         @close-tab="handleCloseTab"
+        @add-click="handleAddClick"
       />
     </el-tab-pane>
   </el-tabs>
