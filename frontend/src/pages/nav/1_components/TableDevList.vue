@@ -100,6 +100,10 @@ async function handleFormSubmit() {
     ElMessage.error('设备名称不能为空')
     return
   }
+  if (!formData.value.instId) {
+    ElMessage.error('实例ID不能为空')
+    return
+  }
   try {
     const response = await axios.post('/api/v1/newDev', formData.value)
     if (response.status === 200) {
