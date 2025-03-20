@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import axios from 'axios'
+import { ElMessage } from 'element-plus' // 新增Element消息组件导入
 import { onMounted, onUnmounted, ref } from 'vue'
 
 // 定义设备数据的类型
@@ -24,7 +25,7 @@ const props = defineProps<{
 }>()
 
 // 定义事件
-const emit = defineEmits(['data-click', 'point-click', 'delete-click'])
+const emit = defineEmits(['data-click', 'point-click'])
 
 // 使用 props.jsonData 中的数据
 console.log(props.jsonData.devName)
@@ -67,13 +68,91 @@ async function fetchData() {
   }
 }
 
-// 组件挂载时启动定时器
-onMounted(() => {
-  // 立即获取一次数据
-  fetchData()
+// 新增对话框相关变量
+const dialogVisible = ref(false)
+const formData = ref({
+  devName: '',
+  devDesc: '',
+  config: '',
+  instId: '',
+  devId: '',
+})
+const appOptions = ref([])
 
-  // 每隔 3 秒获取一次数据
+// 新增获取实例列表的函数
+async function fetchApps() {
+  try {
+    const response = await axios.get('/api/v1/listApps')
+    const appsData = response.data.data
+    appOptions.value = Object.values(appsData).map(app => ({
+      value: app.instId,
+      label: app.instName,
+    }))
+  }
+  catch (error) {
+    console.error('获取实例列表失败:', error)
+  }
+}
+
+// 新增表单提交处理
+async function handleFormSubmit() {
+  if (!formData.value.devName) {
+    ElMessage.error('设备名称不能为空')
+    return
+  }
+  try {
+    const response = await axios.post('/api/v1/newDev', formData.value)
+    if (response.status === 200) {
+      ElMessage.success('设备添加成功')
+      dialogVisible.value = false
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`添加失败: ${response.data.message}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error('请求失败，请检查网络')
+  }
+}
+
+// 新增确认删除对话框相关变量
+const confirmDeleteVisible = ref(false)
+const selectedDevId = ref('')
+const selectedDevName = ref('') // 新增设备名称变量
+
+// 新增删除确认方法
+async function handleDelete() {
+  try {
+    const response = await axios.post('/api/v1/delDev', {
+      devList: [selectedDevId.value],
+    })
+    if (response.status === 200) {
+      ElMessage.success('设备删除成功')
+      fetchData() // 刷新表格数据
+    }
+  }
+  catch (error) {
+    ElMessage.error('删除失败，请检查网络')
+    console.error('删除设备失败:', error)
+  }
+  finally {
+    confirmDeleteVisible.value = false
+  }
+}
+
+// 修改删除按钮事件处理，添加设备名称参数
+function showDeleteConfirm(dev: DeviceData) { // 参数改为对象形式
+  selectedDevId.value = dev.devId
+  selectedDevName.value = dev.devName // 新增设备名称赋值
+  confirmDeleteVisible.value = true
+}
+
+// 修改onMounted初始化
+onMounted(() => {
+  fetchData()
   intervalId = setInterval(fetchData, 3000)
+  fetchApps() // 新增加载实例列表
 })
 
 // 组件卸载时清除定时器
@@ -113,10 +192,80 @@ onUnmounted(() => {
         <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devId, scope.row.devDesc, scope.row.instId)">
           点表
         </el-button>
-        <el-button size="small" type="danger" @click="emit('delete-click', scope.row.devName, scope.row.devId)">
+        <el-button
+          size="small"
+          type="danger"
+          @click="showDeleteConfirm(scope.row)"
+        >
           删除
         </el-button>
       </template>
     </el-table-column>
   </el-table>
+
+  <div style="display: flex; align-items: center; margin-bottom: 10px;">
+    <el-button type="primary" @click="dialogVisible = true">
+      <!-- 修改按钮点击事件 -->
+      新增设备
+    </el-button>
+  </div>
+
+  <!-- 新增对话框 -->
+  <el-dialog v-model="dialogVisible" title="新增设备" width="30%" draggable>
+    <el-form :model="formData">
+      <el-form-item label="实例名称" required>
+        <el-select v-model="formData.instId" placeholder="请选择实例">
+          <el-option
+            v-for="option in appOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="实例 ID" required>
+        <el-input v-model="formData.instId" disabled />
+      </el-form-item>
+      <el-form-item label="设备名称" required>
+        <el-input v-model="formData.devName" placeholder="请输入设备名称" />
+      </el-form-item>
+      <el-form-item label="设备描述">
+        <el-input v-model="formData.devDesc" placeholder="请输入设备描述" />
+      </el-form-item>
+      <el-form-item label="设备配置">
+        <el-input v-model="formData.config" type="textarea" placeholder="请输入配置信息" />
+      </el-form-item>
+      <el-form-item v-show="false" label="设备ID">
+        <el-input v-model="formData.devId" placeholder="请输入设备ID" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleFormSubmit">
+          提交
+        </el-button>
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+
+  <!-- 新增删除确认对话框 -->
+  <el-dialog
+    v-model="confirmDeleteVisible"
+    title="删除确认"
+    width="30%"
+    draggable
+  >
+    <!-- 删除原静态文本 -->
+    <!-- 新增动态显示 -->
+    <span>确定要删除设备 <strong>{{ selectedDevName }}</strong> (ID: {{ selectedDevId }}) 吗？</span>
+    <template #footer>
+      <el-button @click="confirmDeleteVisible = false">
+        取消
+      </el-button>
+      <el-button type="danger" @click="handleDelete">
+        确认
+      </el-button>
+    </template>
+  </el-dialog>
 </template>

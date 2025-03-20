@@ -181,6 +181,7 @@ function cancelDelete() {
     title="删除确认"
     width="30%"
     :before-close="cancelDelete"
+    draggable
   >
     <span>确定要删除应用名称={{ currentDeleteTarget?.instName }}，应用ID={{ currentDeleteTarget?.instId }} 吗？</span>
     <template #footer>
