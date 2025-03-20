@@ -50,7 +50,7 @@ async function fetchData() {
         'Content-Type': 'application/json', // 设置请求头为 JSON 格式
       },
     })
-
+    console.log('响应数据:', response.data)
     // 定义 data 的类型
     const data: Record<string, DeviceData> = response.data.data
 

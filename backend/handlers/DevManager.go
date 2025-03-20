@@ -55,9 +55,15 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 		})
 		return
 	}
+	type NewConfig struct {
+		DevConfig      // 嵌入 AppConfig 结构体
+		IsRunning bool `json:"isRunning"` // 新增字段
+	}
+	OutterMap := make(map[string]NewConfig)
 	if len(values) == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "no data",
+			"data":    OutterMap,
 		})
 		return
 	}
@@ -70,11 +76,7 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 	for id := range Workers {
 		ids = append(ids, id)
 	}
-	type NewConfig struct {
-		DevConfig      // 嵌入 AppConfig 结构体
-		IsRunning bool `json:"isRunning"` // 新增字段
-	}
-	OutterMap := make(map[string]NewConfig)
+
 	var isrun bool
 	for key, value := range values {
 		var newValue DevConfig
@@ -101,8 +103,9 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 		}
 	}
 	if len(OutterMap) == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "no data, instid is not exist",
+			"data":    OutterMap,
 		})
 		return
 	}
