@@ -75,10 +75,15 @@ function handleDataClick(devName: string, devDesc: string, devId: string, instId
 }
 
 // 处理“点表”按钮点击事件
-function handlePointClick(devName: string, devId: string) {
-  ElMessageBox.alert(`设备点表：<br>设备名称=${devName}<br>设备ID=${devId}`, '提示', {
-    confirmButtonText: '确定',
-    dangerouslyUseHTMLString: true, // 允许使用 HTML 字符串
+function handlePointClick(devName: string, devDesc: string, devId: string, instId: string) {
+  const tabName = `点表[${devName}]`
+  addNewTab(tabName, 'tags', { // 修改类型为'tags'
+    apiUrl: '/api/v1/getDevtags', // 新增API路径
+  }, {
+    devName,
+    devDesc,
+    devId,
+    instId,
   })
 }
 
