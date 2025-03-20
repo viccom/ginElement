@@ -104,6 +104,12 @@ async function handleFormSubmit() {
     ElMessage.error('实例ID不能为空')
     return
   }
+  // 新增检查名称重复
+  checkDeviceName()
+  if (nameError.value) {
+    ElMessage.error('设备名称已存在')
+    return
+  }
   try {
     const response = await axios.post('/api/v1/newDev', formData.value)
     if (response.status === 200) {
@@ -150,6 +156,21 @@ function showDeleteConfirm(dev: DeviceData) { // 参数改为对象形式
   selectedDevId.value = dev.devId
   selectedDevName.value = dev.devName // 新增设备名称赋值
   confirmDeleteVisible.value = true
+}
+
+// 新增错误提示变量
+const nameError = ref('')
+
+// 新增名称检查函数
+function checkDeviceName() {
+  const name = formData.value.devName
+  if (!name) {
+    nameError.value = ''
+    return
+  }
+  nameError.value = tableData.value.some(item => item.devName === name)
+    ? '设备名称已存在'
+    : ''
 }
 
 // 修改onMounted初始化
@@ -230,8 +251,8 @@ onUnmounted(() => {
       <el-form-item label="实例 ID" required>
         <el-input v-model="formData.instId" disabled />
       </el-form-item>
-      <el-form-item label="设备名称" required>
-        <el-input v-model="formData.devName" placeholder="请输入设备名称" />
+      <el-form-item label="设备名称" required :error="nameError">
+        <el-input v-model="formData.devName" placeholder="请输入设备名称" @input="checkDeviceName" />
       </el-form-item>
       <el-form-item label="设备描述">
         <el-input v-model="formData.devDesc" placeholder="请输入设备描述" />

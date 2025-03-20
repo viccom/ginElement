@@ -3,6 +3,12 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { defineEmits, onMounted, ref } from 'vue'
 
+const props = defineProps<{
+  config: {
+    apiUrl: string
+  }
+}>()
+
 const emit = defineEmits(['closeTab']) // 修改事件名为 camelCase
 
 const appCodes = ref<string[]>([])
@@ -75,10 +81,16 @@ async function submitForm() {
     return
   }
 
+  // 新增名称冲突检查
+  if (formData.value.instName && appListNames.value.includes(formData.value.instName)) {
+    ElMessage.error('应用名称已存在')
+    return
+  }
+
   try {
     const postData = {
       ...formData.value,
-      config: JSON.parse(formData.value.config)
+      config: JSON.parse(formData.value.config),
     }
     const response = await axios.post('/api/v1/newApp', postData, {
       headers: { 'Content-Type': 'application/json' },
@@ -100,8 +112,50 @@ async function submitForm() {
   }
 }
 
+// 新增应用名称列表和错误提示
+const appListNames = ref<string[]>([])
+const nameError = ref('')
+
+// 新增获取应用列表名称的方法
+async function fetchAppList() {
+  try {
+    const response = await axios.get('/api/v1/listApps', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    console.log('获取应用列表成功:', response.data)
+    if (
+      response?.data
+      && typeof response.data === 'object'
+      && response.data.data !== undefined
+    ) {
+      appListNames.value = Object.values(response.data.data).map(item => item.instName)
+    }
+    else {
+      throw new Error('响应数据格式不符合预期')
+    }
+  }
+  catch (error) {
+    // 使用可选链避免error.response未定义时报错
+    console.error('获取应用列表失败:', error, '响应内容:', error.response?.data)
+    appListNames.value = []
+  }
+}
+
+// 新增名称冲突检查方法
+function checkNameConflict() {
+  const currentName = formData.value.instName
+  if (!currentName) {
+    nameError.value = ''
+    return
+  }
+  nameError.value = appListNames.value.includes(currentName) ? '名称已存在' : ''
+}
+
 onMounted(() => {
   fetchAppCodes()
+  fetchAppList() // 新增加载应用列表
 })
 </script>
 
@@ -116,9 +170,12 @@ onMounted(() => {
     <!-- 实例名称 -->
     <el-form-item
       label="实例名称"
-      :error="!formData.instName && '实例名称不能为空'"
+      :error="nameError"
     >
-      <el-input v-model="formData.instName" />
+      <el-input
+        v-model="formData.instName"
+        @input="checkNameConflict"
+      />
     </el-form-item>
 
     <el-form-item label="应用类型">
