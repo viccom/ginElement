@@ -4,12 +4,12 @@ import { ElMessageBox } from 'element-plus'
 import { onMounted, ref, watch } from 'vue' // 引入 watch
 import { addTab, handleTabsEdit, initDefaultTab, restoreTabsFromLocalStorage, saveTabsToLocalStorage } from '~/utils/tabUtils'
 import ChartComponent from './1_components/ChartComponent.vue'
-import FormComponent from './1_components/FormComponent.vue'
 import TableDataList from './1_components/TableDataList.vue'
 import TableDevList from './1_components/TableDevList.vue'
+import TableTagList from './1_components/TableTagList.vue'
 
 // 定义标签页类型
-type TabType = 'devs' | 'form' | 'data' | 'chart'
+type TabType = 'devs' | 'tags' | 'data' | 'chart'
 
 // 指定唯一的 storageKey
 const devPage_storageKey = 'devtabs'
@@ -18,7 +18,7 @@ const devPage_storageKey = 'devtabs'
 const componentMap = {
   devs: TableDevList,
   data: TableDataList,
-  form: FormComponent,
+  tags: TableTagList,
   chart: ChartComponent,
 }
 
