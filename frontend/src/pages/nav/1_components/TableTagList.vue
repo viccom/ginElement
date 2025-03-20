@@ -67,19 +67,18 @@ onUnmounted(() => {
 })
 
 // 操作列按钮处理
-function handleModifyClick(pointName: string) {
-  ElMessage({
-    message: `${pointName} 修改暂未实现`,
-    type: 'info',
-    duration: 3000,
-    center: true,
-  })
+function handleModifyClick(row: TagDataItem) {
+  currentRowIndex.value = tableData.value.findIndex(item => item.pointName === row.pointName);
+  currentRowData.value = { ...row };
+  isDialogVisible.value = true;
 }
 
 function handleDeleteClick(pointName: string) {
+  // 新增：根据pointName过滤删除当前行
+  tableData.value = tableData.value.filter(item => item.pointName !== pointName)
   ElMessage({
-    message: `${pointName} 删除暂未实现`,
-    type: 'info',
+    message: `${pointName} 已成功删除`,
+    type: 'success',
     duration: 3000,
     center: true,
   })
@@ -120,7 +119,8 @@ async function handleImport(file: File) {
     }
 
     reader.readAsText(file)
-  } catch (error) {
+  }
+  catch (error) {
     ElMessage.error('导入过程中发生错误')
     console.error('导入错误:', error)
   }
@@ -142,6 +142,20 @@ function saveData() {
     duration: 3000,
     center: true,
   })
+}
+
+// 新增响应式变量
+const isDialogVisible = ref(false);
+const currentRowData = ref<TagDataItem>({ pointName: '', description: '', type: '' });
+const currentRowIndex = ref(-1);
+
+// 新增确认修改函数
+function confirmModify() {
+  if (currentRowIndex.value !== -1) {
+    tableData.value[currentRowIndex.value] = { ...currentRowData.value };
+    ElMessage.success('修改成功');
+  }
+  isDialogVisible.value = false;
 }
 
 </script>
@@ -235,7 +249,7 @@ function saveData() {
         <el-button
           size="small"
           type="primary"
-          @click="handleModifyClick(scope.row.pointName)"
+          @click="handleModifyClick(scope.row)"
         >
           修改
         </el-button>
@@ -259,14 +273,45 @@ function saveData() {
         :on-change="(uploadFile) => handleImport(uploadFile.raw)"
         accept=".csv"
       >
-        <el-button type="primary">导入</el-button>
+        <el-button type="primary">
+          导入
+        </el-button>
       </el-upload>
     </el-col>
     <el-col :span="6">
-      <el-button type="success" @click="exportCSV">导出</el-button>
+      <el-button type="success" @click="exportCSV">
+        导出
+      </el-button>
     </el-col>
     <el-col :span="6">
-      <el-button type="warning" @click="saveData">保存</el-button>
+      <el-button type="warning" @click="saveData">
+        保存
+      </el-button>
     </el-col>
   </el-row>
+
+  <!-- 新增对话框组件 -->
+  <el-dialog
+    v-model="isDialogVisible"
+    title="修改数据"
+    width="30%"
+  >
+    <el-form :model="currentRowData">
+      <el-form-item label="点名">
+        <el-input v-model="currentRowData.pointName" />
+      </el-form-item>
+      <el-form-item label="描述">
+        <el-input v-model="currentRowData.description" />
+      </el-form-item>
+      <el-form-item label="类型">
+        <el-input v-model="currentRowData.type" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="isDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmModify">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
