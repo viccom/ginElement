@@ -50,6 +50,10 @@ async function fetchData() {
       pointName: values[0],
       description: values[1],
       type: values[2],
+      prop1: values[3],
+      prop2: values[4],
+      prop3: values[5],
+      prop4: values[6],
     }))
   }
   catch (error) {
