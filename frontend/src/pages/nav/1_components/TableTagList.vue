@@ -8,6 +8,10 @@ interface TagDataItem {
   pointName: string
   description: string
   type: string
+  prop1: string
+  prop2: string
+  prop3: string
+  prop4: string
   // 根据实际数据扩展其他属性
 }
 
@@ -68,9 +72,9 @@ onUnmounted(() => {
 
 // 操作列按钮处理
 function handleModifyClick(row: TagDataItem) {
-  currentRowIndex.value = tableData.value.findIndex(item => item.pointName === row.pointName);
-  currentRowData.value = { ...row };
-  isDialogVisible.value = true;
+  currentRowIndex.value = tableData.value.findIndex(item => item.pointName === row.pointName)
+  currentRowData.value = { ...row }
+  isDialogVisible.value = true
 }
 
 function handleDeleteClick(pointName: string) {
@@ -91,24 +95,33 @@ async function handleImport(file: File) {
       const text = e.target?.result as string
       const rows = text.split('\n')
       const parsedData: TagDataItem[] = []
-      let errorOccurred = false
+      let errorCount = 0 // 新增错误计数器
 
       rows.forEach((row, index) => {
         const cols = row.split(',')
         if (cols.length < 3) {
-          errorOccurred = true
+          errorCount++
           ElMessage.error(`第${index + 1}行数据不足，需至少包含点名、描述、类型`)
           return
         }
         parsedData.push({
-          pointName: cols[0],
-          description: cols[1],
-          type: cols[2],
+          pointName: (cols[0] || '').replace(/\s/g, ''),
+          description: (cols[1] || '').replace(/\s/g, ''),
+          type: (cols[2] || '').replace(/\s/g, ''),
+          prop1: (cols[3] || '').replace(/\s/g, '') || '',
+          prop2: (cols[4] || '').replace(/\s/g, '') || '',
+          prop3: (cols[5] || '').replace(/\s/g, '') || '',
+          prop4: (cols[6] || '').replace(/\s/g, '') || '',
         })
       })
+      console.log('导入的点表数据：', parsedData)
+      // 直接替换数据，无论是否有错误
+      tableData.value = parsedData
 
-      if (!errorOccurred) {
-        tableData.value = parsedData
+      // 根据错误情况显示不同提示
+      if (errorCount > 0) {
+        ElMessage.warning(`共${errorCount}行数据不符合要求，已跳过`)
+      } else {
         ElMessage.success('导入成功，数据已替换')
       }
     }
@@ -135,29 +148,70 @@ function exportCSV() {
   link.click()
 }
 
-function saveData() {
-  ElMessage({
-    message: '保存功能暂未实现',
-    type: 'info',
-    duration: 3000,
-    center: true,
-  })
+async function saveData() {
+  try {
+    // 1. 构建tagsMap结构
+    const tagsMap = tableData.value.reduce((acc, item) => {
+      // 新增条件判断：跳过pointName为空的无效项
+      if (!item.pointName.trim()) {
+        return acc // 直接返回当前累加器，不处理该行
+      }
+      acc[item.pointName] = [
+        item.pointName,
+        item.description,
+        item.type,
+        item.prop1,
+        item.prop2,
+        item.prop3,
+        item.prop4,
+      ]
+      return acc
+    }, {} as Record<string, any[]>)
+
+    // 新增：检查tagsMap是否为空
+    if (Object.keys(tagsMap).length === 0) {
+      ElMessage.error('表格中没有数据，无法保存')
+      return
+    }
+
+    // 2. 构建完整请求数据
+    const requestData = {
+      devId: devId.value,
+      instid: instId.value, // 注意字段名是instid
+      tagsMap,
+    }
+
+    // 3. 发送POST请求
+    const response = await axios.post('/api/v1/newDevtags', requestData)
+
+    // 4. 处理响应
+    if (response.data.result === 'success') {
+      ElMessage.success('设备新增采集点成功')
+      await fetchData() // 刷新数据
+    }
+    else {
+      ElMessage.error(`保存失败: ${response.data.message}`)
+    }
+  }
+  catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error('网络请求失败，请检查连接')
+  }
 }
 
 // 新增响应式变量
-const isDialogVisible = ref(false);
-const currentRowData = ref<TagDataItem>({ pointName: '', description: '', type: '' });
-const currentRowIndex = ref(-1);
+const isDialogVisible = ref(false)
+const currentRowData = ref<TagDataItem>({ pointName: '', description: '', type: '' })
+const currentRowIndex = ref(-1)
 
 // 新增确认修改函数
 function confirmModify() {
   if (currentRowIndex.value !== -1) {
-    tableData.value[currentRowIndex.value] = { ...currentRowData.value };
-    ElMessage.success('修改成功');
+    tableData.value[currentRowIndex.value] = { ...currentRowData.value }
+    ElMessage.success('修改成功')
   }
-  isDialogVisible.value = false;
+  isDialogVisible.value = false
 }
-
 </script>
 
 <template>
@@ -244,6 +298,10 @@ function confirmModify() {
     <el-table-column prop="pointName" label="点名" />
     <el-table-column prop="description" label="描述" />
     <el-table-column prop="type" label="类型" />
+    <el-table-column prop="prop1" label="属性1" />
+    <el-table-column prop="prop2" label="属性2" />
+    <el-table-column prop="prop3" label="属性3" />
+    <el-table-column prop="prop4" label="属性4" />
     <el-table-column label="操作" width="150">
       <template #default="scope">
         <el-button

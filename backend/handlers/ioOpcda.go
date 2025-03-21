@@ -90,7 +90,9 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					fmt.Println("Error unmarshalling JSON:", erra)
 					return
 				}
-				opcitem := newValue[0]
+				//OPC DA标签为点表二维数组中的第4个元素
+				//opcitem := newValue[0]
+				opcitem := newValue[3]
 				opctags = append(opctags, opcitem)
 				opcParent[opcitem] = devkey
 				opcBind[opcitem] = tagkey

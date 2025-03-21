@@ -199,6 +199,13 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 		} else {
 			delResult[devidstr] = "Delete OK"
 		}
+		_, err1 := cfgdb.Hash().Delete(devidstr, "*")
+		if err1 != nil {
+			delResult[devidstr] = err1.Error()
+			delError = append(delError, devidstr)
+		} else {
+			delResult[devidstr] = "Delete OK"
+		}
 
 	}
 
@@ -253,8 +260,9 @@ func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
 	}
 	_, err := cfgdb.Hash().SetMany(devTags.DevID, tagsMap)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "New Dev Creat Fail",
+			"result":  "fail",
 			"details": fmt.Sprintf("err: '%v' ", err),
 		})
 		return
@@ -262,6 +270,7 @@ func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "add devTags OK",
+		"result":  "success",
 		"devid":   devTags.DevID,
 		"instid":  devTags.InstID,
 		"devTags": tagsMap,
@@ -293,6 +302,7 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 		if err3 != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "Get tags Fail",
+				"result":  "fail",
 				"details": fmt.Sprintf("err: '%v' ", err3),
 			})
 		}
@@ -313,12 +323,14 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 	if len(newtags) == 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "no data, or devid is not exist",
+			"result":  "fail",
 		})
 		return
 	}
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Get data  OK",
+		"result":  "success",
 		"devlist": devOpt.DevList,
 		"data":    newtags,
 	})

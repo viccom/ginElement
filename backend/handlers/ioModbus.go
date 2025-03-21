@@ -199,10 +199,11 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 			datasmap := make(map[string]map[string]any)
 
 			for _, m := range mbtags {
-				deviceUnitid, _ := strconv.Atoi(m[2])
-				registerAddress, _ := strconv.Atoi(m[4])
-				fccode := m[3]
-				dataType := m[5]
+				//从Modbus点表中获取指令所需的参数:单元地址，功能码，寄存器起始地址，数据类型
+				deviceUnitid, _ := strconv.Atoi(m[3])
+				fccode := m[4]
+				registerAddress, _ := strconv.Atoi(m[5])
+				dataType := m[6]
 
 				err = client.SetUnitId(uint8(deviceUnitid))
 				if err != nil {

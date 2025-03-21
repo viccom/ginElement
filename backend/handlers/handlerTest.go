@@ -166,13 +166,13 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 						if newValue[2] == "string" {
 							value = pickRandomElement(stringArr)
 						}
-
+						fmt.Printf("时间： %s, 数值: %+v, 毫秒: %d\n", formattedDate, value, unixMilliTimestamp)
 						valueMap := []any{formattedDate, value, unixMilliTimestamp, GetTypeString(value)}
 						valueMapJson, _ := json.Marshal(valueMap)
 						datasmap[tagkey] = valueMapJson
 
 					}
-					//fmt.Printf("设备： %s, 标签: %s, 数值三元组: %v\n", devkey, tagkey, valueMap)
+					fmt.Printf("设备： %s, 数值三元组: %+v\n", devkey, datasmap)
 					//	统一将数据写入到redka数据库
 					_, err := rtdb.Hash().SetMany(devkey, datasmap)
 					if err != nil {

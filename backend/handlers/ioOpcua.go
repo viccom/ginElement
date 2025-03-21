@@ -109,7 +109,9 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 					log.Println("解析 JSON 失败:", erra)
 					return
 				}
-				opcitem := newValue[0]
+				//OPC UA标签为点表二维数组中的第4个元素
+				//opcitem := newValue[0]
+				opcitem := newValue[3]
 				opctags = append(opctags, opcitem)
 				opcParent[opcitem] = devkey
 				opcBind[opcitem] = tagkey
@@ -230,6 +232,7 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 						log.Println("解析失败:", err)
 						return
 					}
+
 					opcitem := data[0].(string)
 					devkey := opcParent[opcitem]
 					if datasmap[devkey] == nil {
