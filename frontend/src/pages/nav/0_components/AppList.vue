@@ -88,8 +88,15 @@ async function confirmDelete() {
     })
 
     if (response.status === 200) {
-      ElMessage.success(`删除 ${currentDeleteTarget.value.instName} 应用成功`)
-      fetchData()
+      if (response.data.result === 'success') {
+        ElMessage.success(`删除 ${currentDeleteTarget.value.instName} 应用成功`)
+        fetchData()
+      }
+      else {
+        ElMessage.error(`删除 ${currentDeleteTarget.value.instName} 应用失败: 应用实例绑定了设备，必须先删除绑定的设备`)
+      }
+      // ElMessage.success(`删除 ${currentDeleteTarget.value.instName} 应用成功`)
+      // fetchData()
     }
     else {
       ElMessage.error(`删除 ${currentDeleteTarget.value.instName} 应用失败: ${response.data.details || '未知错误'}`)

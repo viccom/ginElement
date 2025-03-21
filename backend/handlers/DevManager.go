@@ -20,6 +20,7 @@ type DevConfig struct {
 // 定义 DevOpt 结构体
 type DevOpt struct {
 	DevList []string `json:"devList"`
+	InstID  string   `json:"instID"`
 }
 
 // 定义 DevTags 结构体
@@ -141,7 +142,7 @@ func NewDev(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	// 生成一个新的16位 UUID
-	uuidstr := "DEV_" + Gen16ID()
+	uuidstr := "DEV_" + GenID(8)
 	devConfig.DevID = uuidstr
 	jsonstr, _ := json.Marshal(devConfig)
 	// 打印 anyConfig
@@ -177,6 +178,16 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 	devlist := devOpt.DevList
+	instid := devOpt.InstID
+	// 查找子线程的停止通道
+	_, exists := Workers[instid]
+	if exists {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "The instance of the device binding is running and the device cannot be deleted",
+			"result":  "fail",
+		})
+		return
+	}
 	delResult := make(map[string]string)
 	delError := make([]string, 0)
 	for _, devid := range devlist {
@@ -194,6 +205,7 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 	if len(delError) > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Del Dev Fail",
+			"result":  "fail",
 			"details": delResult,
 		})
 		return
@@ -201,6 +213,7 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 		// 返回数据库cfgdb中App配置信息 列表
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Del Dev OK",
+			"result":  "success",
 			"devlist": devOpt,
 		})
 	}

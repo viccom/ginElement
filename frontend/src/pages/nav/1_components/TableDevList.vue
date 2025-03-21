@@ -130,16 +130,25 @@ async function handleFormSubmit() {
 const confirmDeleteVisible = ref(false)
 const selectedDevId = ref('')
 const selectedDevName = ref('') // 新增设备名称变量
+const selectedInstId = ref('') // 新增实例ID变量
 
 // 新增删除确认方法
 async function handleDelete() {
   try {
     const response = await axios.post('/api/v1/delDev', {
       devList: [selectedDevId.value],
+      instId: selectedInstId.value,
     })
     if (response.status === 200) {
-      ElMessage.success('设备删除成功')
-      fetchData() // 刷新表格数据
+      if (response.data.result === 'success') {
+        ElMessage.success('设备删除成功')
+        fetchData() // 刷新表格数据
+      }
+      else {
+        ElMessage.error(`删除失败: 设备绑定的实例正在运行，不能删除设备`)
+      }
+      // ElMessage.success('设备删除成功')
+      // fetchData() // 刷新表格数据
     }
   }
   catch (error) {
@@ -155,6 +164,7 @@ async function handleDelete() {
 function showDeleteConfirm(dev: DeviceData) { // 参数改为对象形式
   selectedDevId.value = dev.devId
   selectedDevName.value = dev.devName // 新增设备名称赋值
+  selectedInstId.value = dev.instId // 新增实例ID赋值
   confirmDeleteVisible.value = true
 }
 

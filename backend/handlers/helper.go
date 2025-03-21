@@ -89,6 +89,22 @@ func Gen16ID() string {
 	return base62ID
 }
 
+// 生成 指定长度的 Base62 ID
+func GenID(strlen int) string {
+	// 生成 UUID
+	id := uuid.New()
+	// 将 UUID 转换为大整数
+	bigInt := new(big.Int)
+	bigInt.SetBytes(id[:])
+	// 转换为 Base62
+	base62ID := toBase62(bigInt)
+	// 取前 16 位
+	if len(base62ID) > strlen {
+		base62ID = base62ID[:strlen]
+	}
+	return base62ID
+}
+
 // GetHardwareID 生成一个基于CPU信息的唯一ID
 func GetHardwareID() (string, error) {
 	// 获取CPU信息

@@ -171,7 +171,7 @@ func NewApp(c *gin.Context, cfgdb *redka.DB) {
 	}
 
 	// 生成一个新的16位 UUID
-	uuidstr := appConfig.AppCode + "@" + Gen16ID()
+	uuidstr := appConfig.AppCode + "@" + GenID(8)
 
 	appConfig.InstID = uuidstr
 	jsonstr, _ := json.Marshal(appConfig)
@@ -207,6 +207,28 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	devvalues, _ := cfgdb.Hash().Items(DevAtInstKey)
+	existsDev := false
+	for _, value := range devvalues {
+		var newValue DevConfig
+		erra := json.Unmarshal([]byte(value.String()), &newValue)
+		if erra != nil {
+			fmt.Println("Error unmarshalling JSON:", erra)
+			continue
+		}
+		//fmt.Printf("devId: %+v, InstId: %+v\n",key newValue.InstID)
+		if instopt.InstId == newValue.InstID {
+			existsDev = true
+		}
+	}
+	if existsDev {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "The instance is being used by the device and cannot be deleted",
+			"result":  "failed",
+		})
+		return
+	}
+
 	workersLock.Lock()
 	defer workersLock.Unlock()
 	instid := instopt.InstId
@@ -222,6 +244,7 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to delete app instance",
+			"result":  "failed",
 			"error":   err.Error(),
 		})
 		return
@@ -229,6 +252,7 @@ func DelApp(c *gin.Context, cfgdb *redka.DB) {
 	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "App instance deleted",
+		"result":  "success",
 		"data":    instopt,
 	})
 }
@@ -540,7 +564,7 @@ func RestartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 			workersLock.Lock()
 			delete(Workers, instid)
 			workersLock.Unlock()
-			fmt.Printf("RestartApp提示：Worker退出,线程ID: %s 已从全局变量中删除\n", instid)
+			fmt.Printf("Worker退出,线程ID: %s 已从全局变量中删除\n", instid)
 		}()
 		fn := IotappMap[appcode]
 		fn(instid, stopChan, cfgdb, rtdb)
