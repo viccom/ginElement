@@ -233,6 +233,10 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 					mbConnected = false
 					break
 				}
+				if value == nil {
+					log.Printf("读取 Modbus 数据为空\n")
+					continue
+				}
 
 				tagid := m[0]
 				valueMap := []any{formattedDate, value, unixMilliTimestamp, GetTypeString(value)}

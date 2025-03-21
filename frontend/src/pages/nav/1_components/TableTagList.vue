@@ -201,7 +201,7 @@ async function saveData() {
 
 // 新增响应式变量
 const isDialogVisible = ref(false)
-const currentRowData = ref<TagDataItem>({ pointName: '', description: '', type: '' })
+const currentRowData = ref<TagDataItem>({ pointName: '', description: '', type: '', prop1: '', prop2: '', prop3: '', prop4: '' })
 const currentRowIndex = ref(-1)
 
 // 新增确认修改函数
@@ -337,13 +337,13 @@ function confirmModify() {
       </el-upload>
     </el-col>
     <el-col :span="6">
-      <el-button type="success" @click="exportCSV">
-        导出
+      <el-button type="warning" @click="saveData">
+        保存
       </el-button>
     </el-col>
     <el-col :span="6">
-      <el-button type="warning" @click="saveData">
-        保存
+      <el-button type="success" @click="exportCSV">
+        导出
       </el-button>
     </el-col>
   </el-row>
@@ -363,6 +363,18 @@ function confirmModify() {
       </el-form-item>
       <el-form-item label="类型">
         <el-input v-model="currentRowData.type" />
+      </el-form-item>
+      <el-form-item label="属性1">
+        <el-input v-model="currentRowData.prop1" />
+      </el-form-item>
+      <el-form-item label="属性2">
+        <el-input v-model="currentRowData.prop2" />
+      </el-form-item>
+      <el-form-item label="属性3">
+        <el-input v-model="currentRowData.prop3" />
+      </el-form-item>
+      <el-form-item label="属性4">
+        <el-input v-model="currentRowData.prop4" />
       </el-form-item>
     </el-form>
     <template #footer>

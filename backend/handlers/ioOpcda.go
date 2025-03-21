@@ -146,6 +146,9 @@ func OpcDARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 						}
 					}
 					// 将 data.Values[i] 转换为字符串
+					if data.Values[i] == nil {
+						continue
+					}
 					unixTime := data.TimeStamps[i].Unix()
 					timestampstr := data.TimeStamps[i].Format("2006-01-02 15:04:05")
 					//valueStr := fmt.Sprintf("%v", data.Values[i])

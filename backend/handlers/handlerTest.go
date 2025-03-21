@@ -167,6 +167,9 @@ func Simulator(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 							value = pickRandomElement(stringArr)
 						}
 						fmt.Printf("时间： %s, 数值: %+v, 毫秒: %d\n", formattedDate, value, unixMilliTimestamp)
+						if value == nil {
+							continue
+						}
 						valueMap := []any{formattedDate, value, unixMilliTimestamp, GetTypeString(value)}
 						valueMapJson, _ := json.Marshal(valueMap)
 						datasmap[tagkey] = valueMapJson

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nalgeon/redka"
 	"net/http"
+	"strings"
 )
 
 // 定义 DevConfig 结构体
@@ -199,12 +200,13 @@ func DelDev(c *gin.Context, cfgdb *redka.DB) {
 		} else {
 			delResult[devidstr] = "Delete OK"
 		}
-		_, err1 := cfgdb.Hash().Delete(devidstr, "*")
+		delNum, err1 := cfgdb.Key().Delete(devidstr)
 		if err1 != nil {
 			delResult[devidstr] = err1.Error()
 			delError = append(delError, devidstr)
 		} else {
 			delResult[devidstr] = "Delete OK"
+			fmt.Printf("del %d tags\n", delNum)
 		}
 
 	}
@@ -243,21 +245,25 @@ func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
 		return
 	}
 
-	//for key, value := range devTags.TagsMap {
-	//	fmt.Printf("键: %s, 值: %s\n", key, value)
-	//}
-	// 转换后的 map
 	tagsMap := make(map[string]any)
 
-	// 遍历原始 map
 	for key, values := range devTags.TagsMap {
-		jsonData, err := json.Marshal(values)
+		trimmedValues := make([]any, len(values))
+		for i, v := range values {
+			if str, ok := v.(string); ok { // 检查是否为字符串类型
+				trimmedValues[i] = strings.TrimSpace(str) // 清除首尾空白字符
+			} else {
+				trimmedValues[i] = v
+			}
+		}
+		jsonData, err := json.Marshal(trimmedValues)
 		if err != nil {
 			fmt.Println("Error marshalling to JSON:", err)
 			continue
 		}
-		tagsMap[key] = string(jsonData) // 将切片转为 JSON 字符串
+		tagsMap[key] = string(jsonData) // 保留JSON字符串格式
 	}
+
 	_, err := cfgdb.Hash().SetMany(devTags.DevID, tagsMap)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -267,7 +273,6 @@ func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
 		})
 		return
 	}
-	// 返回数据库cfgdb中App配置信息 列表
 	c.JSON(http.StatusOK, gin.H{
 		"message": "add devTags OK",
 		"result":  "success",
