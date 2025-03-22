@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Refresh } from '@element-plus/icons-vue'
+import { Download, Finished, Plus, Refresh, Upload } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { onMounted, onUnmounted, ref } from 'vue'
@@ -125,7 +125,8 @@ async function handleImport(file: File) {
       // 根据错误情况显示不同提示
       if (errorCount > 0) {
         ElMessage.warning(`共${errorCount}行数据不符合要求，已跳过`)
-      } else {
+      }
+      else {
         ElMessage.success('导入成功，数据已替换')
       }
     }
@@ -210,17 +211,98 @@ const currentRowIndex = ref(-1)
 
 // 新增确认修改函数
 function confirmModify() {
+  // 新增的验证逻辑开始
+  if (!currentRowData.value.pointName.trim()) {
+    ElMessage.error('点名不能为空')
+    return
+  }
+  if (!currentRowData.value.description.trim()) {
+    ElMessage.error('描述不能为空')
+    return
+  }
+  if (!currentRowData.value.type.trim()) {
+    ElMessage.error('类型不能为空')
+    return
+  }
+
+  const pointNameRegex = /^[a-z]\w*$/i
+  if (!pointNameRegex.test(currentRowData.value.pointName)) {
+    ElMessage.error('点名必须以字母开头，仅包含字母/数字/下划线')
+    return
+  }
+  // 新增的验证逻辑结束
+
   if (currentRowIndex.value !== -1) {
     tableData.value[currentRowIndex.value] = { ...currentRowData.value }
     ElMessage.success('修改成功')
   }
   isDialogVisible.value = false
 }
+
+// 修改修改对话框的类型字段为下拉选择
+// 删除原有的类型输入框：
+// // 删除:<el-input v-model="currentRowData.type" />
+
+// 新增类型下拉选择：
+
+// 新增响应式变量
+const isAddDialogVisible = ref(false)
+const newRowData = ref<TagDataItem>({
+  pointName: '',
+  description: '',
+  type: '',
+  prop1: '',
+  prop2: '',
+  prop3: '',
+  prop4: '',
+})
+
+// 新增方法
+function handleAddClick() {
+  isAddDialogVisible.value = true
+}
+
+function confirmAdd() {
+  // 新增必填项验证逻辑
+  if (!newRowData.value.pointName.trim()) {
+    ElMessage.error('点名不能为空')
+    return
+  }
+  if (!newRowData.value.description.trim()) {
+    ElMessage.error('描述不能为空')
+    return
+  }
+  if (!newRowData.value.type.trim()) {
+    ElMessage.error('类型不能为空')
+    return
+  }
+
+  // 新增点名格式验证
+  const pointNameRegex = /^[a-z]\w*$/i
+  if (!pointNameRegex.test(newRowData.value.pointName)) {
+    ElMessage.error('点名必须以字母开头，仅包含字母/数字/下划线')
+    return
+  }
+
+  tableData.value.push({ ...newRowData.value })
+  isAddDialogVisible.value = false
+  ElMessage.success('新增成功')
+  // 重置输入数据
+  newRowData.value = {
+    pointName: '',
+    description: '',
+    type: '',
+    prop1: '',
+    prop2: '',
+    prop3: '',
+    prop4: '',
+  }
+}
 </script>
 
 <template>
   <el-row :gutter="20">
-    <el-col :span="2">
+    <el-col :span="3">
       <div>
         <el-input
           v-model="search"
@@ -230,7 +312,7 @@ function confirmModify() {
       </div>
     </el-col>
 
-    <el-col :span="4">
+    <el-col :span="5">
       <div>
         <el-input
           v-model="devName"
@@ -244,7 +326,7 @@ function confirmModify() {
         </el-input>
       </div>
     </el-col>
-    <el-col :span="4">
+    <el-col :span="5">
       <div>
         <el-input
           v-model="devDesc"
@@ -286,13 +368,6 @@ function confirmModify() {
         </el-input>
       </div>
     </el-col>
-    <el-col :span="1">
-      <div>
-        <el-button type="primary" :icon="Refresh" @click="fetchData">
-          重置
-        </el-button>
-      </div>
-    </el-col>
   </el-row>
 
   <el-table
@@ -328,25 +403,35 @@ function confirmModify() {
 
   <!-- 新增按钮组 -->
   <el-row style="margin-top: 20px">
-    <el-col :span="6">
+    <el-col :span="4">
+      <el-button type="primary" :icon="Refresh" @click="fetchData">
+        重置
+      </el-button>
+    </el-col>
+    <el-col :span="4">
+      <el-button type="primary" :icon="Plus" @click="handleAddClick">
+        新增
+      </el-button>
+    </el-col>
+    <el-col :span="4">
       <el-upload
         action="#"
         :show-file-list="false"
         :on-change="(uploadFile) => handleImport(uploadFile.raw)"
         accept=".csv"
       >
-        <el-button type="primary">
+        <el-button type="primary" :icon="Upload">
           导入
         </el-button>
       </el-upload>
     </el-col>
-    <el-col :span="6">
-      <el-button type="warning" @click="saveData">
+    <el-col :span="4">
+      <el-button type="warning" :icon="Finished" @click="saveData">
         保存
       </el-button>
     </el-col>
-    <el-col :span="6">
-      <el-button type="success" @click="exportCSV">
+    <el-col :span="4">
+      <el-button type="success" :icon="Download" @click="exportCSV">
         导出
       </el-button>
     </el-col>
@@ -366,7 +451,14 @@ function confirmModify() {
         <el-input v-model="currentRowData.description" />
       </el-form-item>
       <el-form-item label="类型">
-        <el-input v-model="currentRowData.type" />
+        <el-select v-model="currentRowData.type" placeholder="请选择类型" style="width: 100%">
+          <el-option
+            v-for="option in ['int', 'float', 'string', 'bool']"
+            :key="option"
+            :label="option"
+            :value="option"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="属性1">
         <el-input v-model="currentRowData.prop1" />
@@ -385,6 +477,50 @@ function confirmModify() {
       <span class="dialog-footer">
         <el-button @click="isDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="confirmModify">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
+
+  <!-- 新增对话框 -->
+  <el-dialog
+    v-model="isAddDialogVisible"
+    title="新增记录"
+    width="30%"
+  >
+    <el-form :model="newRowData">
+      <el-form-item label="点名">
+        <el-input v-model="newRowData.pointName" />
+      </el-form-item>
+      <el-form-item label="描述">
+        <el-input v-model="newRowData.description" />
+      </el-form-item>
+      <el-form-item label="类型">
+        <el-select v-model="newRowData.type" placeholder="请选择类型" style="width: 100%">
+          <el-option
+            v-for="option in ['int', 'float', 'string', 'bool']"
+            :key="option"
+            :label="option"
+            :value="option"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="属性1">
+        <el-input v-model="newRowData.prop1" />
+      </el-form-item>
+      <el-form-item label="属性2">
+        <el-input v-model="newRowData.prop2" />
+      </el-form-item>
+      <el-form-item label="属性3">
+        <el-input v-model="newRowData.prop3" />
+      </el-form-item>
+      <el-form-item label="属性4">
+        <el-input v-model="newRowData.prop4" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="isAddDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAdd">确定</el-button>
       </span>
     </template>
   </el-dialog>
