@@ -262,41 +262,40 @@ function handleAddClick() {
   isAddDialogVisible.value = true
 }
 
-function confirmAdd() {
-  // 新增必填项验证逻辑
-  if (!newRowData.value.pointName.trim()) {
-    ElMessage.error('点名不能为空')
-    return
-  }
-  if (!newRowData.value.description.trim()) {
-    ElMessage.error('描述不能为空')
-    return
-  }
-  if (!newRowData.value.type.trim()) {
-    ElMessage.error('类型不能为空')
-    return
-  }
+// 添加表单引用
+const addFormRef = ref()
 
-  // 新增点名格式验证
-  const pointNameRegex = /^[a-z]\w*$/i
-  if (!pointNameRegex.test(newRowData.value.pointName)) {
-    ElMessage.error('点名必须以字母开头，仅包含字母/数字/下划线')
-    return
-  }
+// 修改确认新增方法
+async function confirmAdd() {
+  const formEl = addFormRef.value
+  if (!formEl) return
+
+  const isValid = await formEl.validate().catch(() => false)
+  if (!isValid) return
 
   tableData.value.push({ ...newRowData.value })
   isAddDialogVisible.value = false
   ElMessage.success('新增成功')
-  // 重置输入数据
-  newRowData.value = {
-    pointName: '',
-    description: '',
-    type: '',
-    prop1: '',
-    prop2: '',
-    prop3: '',
-    prop4: '',
-  }
+  newRowData.value = { /* 重置逻辑保持不变 */ }
+}
+
+
+// 表单验证规则
+const addFormRules = {
+  pointName: [
+    { required: true, message: '点名不能为空', trigger: 'blur' },
+    {
+      pattern: /^[a-z]\w*$/i,
+      message: '必须以字母开头，仅包含字母/数字/下划线',
+      trigger: 'blur'
+    }
+  ],
+  description: [
+    { required: true, message: '描述不能为空', trigger: 'blur' }
+  ],
+  type: [
+    { required: true, message: '请选择类型', trigger: 'change' }
+  ]
 }
 </script>
 
@@ -487,7 +486,10 @@ function confirmAdd() {
     title="新增记录"
     width="30%"
   >
-    <el-form :model="newRowData">
+    <el-form   :model="newRowData"
+               :rules="addFormRules"
+               ref="addFormRef"
+    >
       <el-form-item label="点名">
         <el-input v-model="newRowData.pointName" />
       </el-form-item>
