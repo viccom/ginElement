@@ -35,6 +35,11 @@ const devId = ref(props.jsonData.devId)
 const tableData = ref<TagDataItem[]>([])
 const search = ref('') // 新增搜索功能
 
+// 分页相关数据
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
 // 定时器ID
 const intervalId: number | null = null
 
@@ -55,6 +60,7 @@ async function fetchData() {
       prop3: values[5],
       prop4: values[6],
     }))
+    total.value = tableData.value.length
   }
   catch (error) {
     console.error('加载点表数据失败:', error)
@@ -239,12 +245,6 @@ function confirmModify() {
   isDialogVisible.value = false
 }
 
-// 修改修改对话框的类型字段为下拉选择
-// 删除原有的类型输入框：
-// // 删除:<el-input v-model="currentRowData.type" />
-
-// 新增类型下拉选择：
-
 // 新增响应式变量
 const isAddDialogVisible = ref(false)
 const newRowData = ref<TagDataItem>({
@@ -297,6 +297,28 @@ function confirmAdd() {
     prop3: '',
     prop4: '',
   }
+}
+
+// 新增多选功能
+const multipleSelection = ref<TagDataItem[]>([])
+
+function handleSelectionChange(val: TagDataItem[]) {
+  multipleSelection.value = val
+}
+
+function handleMultipleDelete() {
+  if (multipleSelection.value.length === 0) {
+    ElMessage.warning('请选择要删除的行')
+    return
+  }
+  const pointNamesToDelete = multipleSelection.value.map(item => item.pointName)
+  tableData.value = tableData.value.filter(item => !pointNamesToDelete.includes(item.pointName))
+  ElMessage({
+    message: `已成功删除 ${pointNamesToDelete.length} 行`,
+    type: 'success',
+    duration: 3000,
+    center: true,
+  })
 }
 </script>
 
@@ -371,9 +393,11 @@ function confirmAdd() {
   </el-row>
 
   <el-table
-    :data="tableData.filter(data => !search || data.pointName.includes(search))"
+    :data="tableData.filter(data => !search || data.pointName.includes(search)).slice((currentPage - 1) * pageSize, currentPage * pageSize)"
     style="width: 100%"
+    @selection-change="handleSelectionChange"
   >
+    <el-table-column type="selection" width="55" />
     <el-table-column prop="pointName" label="点名" />
     <el-table-column prop="description" label="描述" />
     <el-table-column prop="type" label="类型" />
@@ -400,6 +424,15 @@ function confirmAdd() {
       </template>
     </el-table-column>
   </el-table>
+
+  <!-- 新增分页组件 -->
+  <el-pagination
+    v-model:current-page="currentPage"
+    v-model:page-size="pageSize"
+    :total="total"
+    layout="total, sizes, prev, pager, next"
+    :page-sizes="[10, 20, 50, 100]"
+  />
 
   <!-- 新增按钮组 -->
   <el-row style="margin-top: 20px">
@@ -433,6 +466,11 @@ function confirmAdd() {
     <el-col :span="4">
       <el-button type="success" :icon="Download" @click="exportCSV">
         导出
+      </el-button>
+    </el-col>
+    <el-col :span="4">
+      <el-button type="danger" :icon="Finished" @click="handleMultipleDelete">
+        批量删除
       </el-button>
     </el-col>
   </el-row>

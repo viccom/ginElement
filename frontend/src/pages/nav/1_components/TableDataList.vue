@@ -40,6 +40,16 @@ const tableData = ref<TagData[]>([])
 // 定义定时器 ID
 let intervalId: number | null = null
 
+// 分页相关数据
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+// 新增：处理每页记录数变化
+function handleSizeChange(size: number) {
+  pageSize.value = size
+  currentPage.value = 1 // 重置到第一页
+}
+
 // 获取数据的函数
 async function fetchData() {
   try {
@@ -115,6 +125,11 @@ function handleSetValueClick(tagName: string) {
     duration: 3000, // 3 秒后消失
     center: true, // 提示信息居中
   })
+}
+
+// 处理分页变化
+function handlePageChange(page: number) {
+  currentPage.value = page
 }
 </script>
 
@@ -197,7 +212,7 @@ function handleSetValueClick(tagName: string) {
     </el-row>
 
     <!-- 表格 -->
-    <el-table :data="tableData.filter(data => !search || data.tagName.includes(search))" style="width: 96%">
+    <el-table :data="tableData.filter(data => !search || data.tagName.includes(search)).slice((currentPage - 1) * pageSize, currentPage * pageSize)" style="width: 96%">
       <!-- 第1列：名称 -->
       <el-table-column prop="tagName" label="名称" />
       <!-- 第2列：时间（支持排序） -->
@@ -221,6 +236,18 @@ function handleSetValueClick(tagName: string) {
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页组件 -->
+    <el-pagination
+      background
+      :total="tableData.filter(data => !search || data.tagName.includes(search)).length"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      layout="total, sizes, prev, pager, next"
+      :page-sizes="[10, 20, 50, 100]"
+      @current-change="handlePageChange"
+      @size-change="handleSizeChange"
+    />
   </div>
 </template>
 
