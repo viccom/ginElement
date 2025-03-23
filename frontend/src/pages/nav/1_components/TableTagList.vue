@@ -482,13 +482,13 @@ function handleMultipleDelete() {
     width="30%"
   >
     <el-form :model="currentRowData">
-      <el-form-item label="点名">
+      <el-form-item label="点名" required>
         <el-input v-model="currentRowData.pointName" />
       </el-form-item>
-      <el-form-item label="描述">
+      <el-form-item label="描述" required>
         <el-input v-model="currentRowData.description" />
       </el-form-item>
-      <el-form-item label="类型">
+      <el-form-item label="类型" required>
         <el-select v-model="currentRowData.type" placeholder="请选择类型" style="width: 100%">
           <el-option
             v-for="option in ['int', 'float', 'string', 'bool']"
@@ -526,13 +526,13 @@ function handleMultipleDelete() {
     width="30%"
   >
     <el-form :model="newRowData">
-      <el-form-item label="点名">
+      <el-form-item label="点名" required>
         <el-input v-model="newRowData.pointName" />
       </el-form-item>
-      <el-form-item label="描述">
+      <el-form-item label="描述" required>
         <el-input v-model="newRowData.description" />
       </el-form-item>
-      <el-form-item label="类型">
+      <el-form-item label="类型" required>
         <el-select v-model="newRowData.type" placeholder="请选择类型" style="width: 100%">
           <el-option
             v-for="option in ['int', 'float', 'string', 'bool']"
