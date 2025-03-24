@@ -342,9 +342,11 @@ func GetDevTags(c *gin.Context, cfgdb *redka.DB) {
 		}
 	}
 	if len(newtags) == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "no data, or devid is not exist",
 			"result":  "fail",
+			"devlist": devOpt.DevList,
+			"data":    newtags,
 		})
 		return
 	}
