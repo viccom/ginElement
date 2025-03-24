@@ -276,7 +276,10 @@ func NewDevTags(c *gin.Context, cfgdb *redka.DB) {
 		}
 		tagsMap[key] = string(jsonData) // 保留JSON字符串格式
 	}
-
+	_, err1 := cfgdb.Key().Delete(devTags.DevID)
+	if err1 != nil {
+		fmt.Println("Error: ", err1)
+	}
 	_, err := cfgdb.Hash().SetMany(devTags.DevID, tagsMap)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
