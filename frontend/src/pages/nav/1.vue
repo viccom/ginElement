@@ -35,6 +35,7 @@ const tabs = ref<Tab[]>(initDefaultTab({
     devName: '',
     devDesc: '',
     devId: '',
+    devType: '',
     instId: '',
   },
 }))

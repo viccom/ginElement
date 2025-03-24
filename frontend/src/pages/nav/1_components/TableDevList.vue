@@ -8,6 +8,7 @@ interface DeviceData {
   devName: string
   devDesc: string
   devId: string
+  devType: string
   instId: string
   isRunning: boolean | null // 允许 isRunning 为 null,
 }
@@ -20,6 +21,7 @@ const props = defineProps<{
     devName: string
     devDesc: string
     devId: string
+    devType: string
     instId: string
   }
 }>()
@@ -42,6 +44,7 @@ async function fetchData() {
     // 定义 POST 请求的请求体
     const requestBody = {
       instid: '',
+      devType: '',
     }
 
     // 发送 POST 请求
@@ -59,6 +62,7 @@ async function fetchData() {
       devName: item.devName,
       devDesc: item.devDesc,
       devId: item.devId,
+      devType: item.devType,
       instId: item.instId,
       isRunning: item.isRunning,
     }))
@@ -76,13 +80,14 @@ const formData = ref({
   config: '',
   instId: '',
   devId: '',
+  devType: '01', // 设置默认值
 })
 const appOptions = ref([])
 
 // 新增获取实例列表的函数
 async function fetchApps() {
   try {
-    const response = await axios.get('/api/v1/listApps')
+    const response = await axios.get('/api/v1/listApps?appType=toSouth')
     const appsData = response.data.data
     appOptions.value = Object.values(appsData).map(app => ({
       value: app.instId,
@@ -203,6 +208,7 @@ onUnmounted(() => {
     <el-table-column prop="devName" label="设备名称" />
     <el-table-column prop="devDesc" label="设备描述" />
     <el-table-column prop="devId" label="设备ID" />
+    <el-table-column prop="devType" label="设备类型" />
     <el-table-column prop="instId" label="宿主ID" />
     <el-table-column label="宿主状态">
       <template #default="scope">
@@ -260,6 +266,9 @@ onUnmounted(() => {
       </el-form-item>
       <el-form-item label="实例 ID" required>
         <el-input v-model="formData.instId" disabled />
+      </el-form-item>
+      <el-form-item label="设备类型" required>
+        <el-input v-model="formData.devType" disabled />
       </el-form-item>
       <el-form-item label="设备名称" required :error="nameError">
         <el-input v-model="formData.devName" placeholder="请输入设备名称" @input="checkDeviceName" />

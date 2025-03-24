@@ -64,6 +64,12 @@ async function fetchData() {
   }
   catch (error) {
     console.error('加载点表数据失败:', error)
+    ElMessage({
+      message: `加载点表数据失败: ${error} `,
+      type: 'error',
+      duration: 3000,
+      center: true,
+    })
   }
 }
 

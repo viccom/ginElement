@@ -12,6 +12,7 @@ import (
 // 定义 DevConfig 结构体
 type DevConfig struct {
 	DevID   string `json:"devId"`
+	DevType string `json:"devType"`
 	DevName string `json:"devName"`
 	DevDesc string `json:"devDesc"`
 	InstID  string `json:"instId"`
@@ -22,6 +23,11 @@ type DevConfig struct {
 type DevOpt struct {
 	DevList []string `json:"devList"`
 	InstID  string   `json:"instID"`
+}
+
+type DevObj struct {
+	InstId  string `json:"instId"`
+	DevType string `json:"devType"`
 }
 
 // 定义 DevTags 结构体
@@ -41,14 +47,14 @@ type DevTags struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /api/v1/listDevices [post]
 func ListDevices(c *gin.Context, cfgdb *redka.DB) {
-	var instinfo InstInfo
-	if err := c.ShouldBindJSON(&instinfo); err != nil {
+	var devinfo DevObj
+	if err := c.ShouldBindJSON(&devinfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	//
-	//fmt.Println("body:", instinfo.InstId)
-	instid := instinfo.InstId
+	//fmt.Println("body:", devinfo.InstId)
+	instid := devinfo.InstId
 	values, err3 := cfgdb.Hash().Items(DevAtInstKey)
 	if err3 != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -92,7 +98,11 @@ func ListDevices(c *gin.Context, cfgdb *redka.DB) {
 		} else {
 			isrun = false
 		}
-		//fmt.Printf("键: %+v, 值: %+v, %v\n", ids, newValue.InstID, isrun)
+
+		// 新增对 devinfo.DevType 的过滤逻辑
+		if devinfo.DevType != "" && newValue.DevType != devinfo.DevType {
+			continue // 跳过不满足条件的设备
+		}
 
 		newData := NewConfig{
 			DevConfig: newValue,
@@ -145,6 +155,9 @@ func NewDev(c *gin.Context, cfgdb *redka.DB) {
 	// 生成一个新的16位 UUID
 	uuidstr := "DEV_" + GenID(8)
 	devConfig.DevID = uuidstr
+	if devConfig.DevType == "" {
+		devConfig.DevType = "01"
+	}
 	jsonstr, _ := json.Marshal(devConfig)
 	// 打印 anyConfig
 	//fmt.Printf("anyConfig: %+v\n", jsonstr)

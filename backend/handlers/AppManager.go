@@ -109,6 +109,9 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 		ids = append(ids, id)
 	}
 
+	// 获取查询参数 appType
+	appType := c.Query("appType")
+
 	for key, value := range values {
 		var newValue AppConfig
 		erra := json.Unmarshal([]byte(value.String()), &newValue)
@@ -121,11 +124,16 @@ func ListApps(c *gin.Context, cfgdb *redka.DB) {
 		if contains(ids, key) {
 			isRunning = true
 		}
+
+		// 新增对 appType 的过滤逻辑
+		if appType != "" && newValue.AppType != appType {
+			continue // 跳过不满足条件的记录
+		}
+
 		config := NewConfig{
 			AppConfig: newValue,
 			IsRunning: isRunning, // 设置新增的 Status 字段
 		}
-		//fmt.Printf("键: %s, 值: %s\n", key, newValue)
 		OutterMap[key] = config
 	}
 	// 返回数据库cfgdb中App配置信息 列表

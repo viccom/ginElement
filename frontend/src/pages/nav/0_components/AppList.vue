@@ -121,11 +121,11 @@ function cancelDelete() {
 <template>
   <!-- 表格部分保持不变 -->
   <el-table :data="tableData" style="width: 100%">
-    <el-table-column prop="instName" label="应用名称" width="180" />
-    <el-table-column prop="instId" label="应用ID" width="180" />
-    <el-table-column prop="appCode" label="应用代码" width="180" />
-    <el-table-column prop="appType" label="应用类型" width="180" />
-    <el-table-column prop="autoStart" label="自动启动" width="180">
+    <el-table-column prop="instName" label="应用名称" />
+    <el-table-column prop="instId" label="应用ID" />
+    <el-table-column prop="appCode" label="应用代码" />
+    <el-table-column prop="appType" label="应用类型" />
+    <el-table-column prop="autoStart" label="自动启动" >
       <template #default="scope">
         <el-switch
           v-model="scope.row.autoStart"
@@ -135,7 +135,7 @@ function cancelDelete() {
         />
       </template>
     </el-table-column>
-    <el-table-column prop="isRunning" label="运行状态" width="180">
+    <el-table-column prop="isRunning" label="运行状态" >
       <template #default="scope">
         <el-tag v-if="scope.row.isRunning === true" type="success">
           运行中
@@ -151,7 +151,7 @@ function cancelDelete() {
     <el-table-column label="操作">
       <template #default="scope">
         <el-button size="small" @click="emit('edit-click', scope.row.instName, scope.row.instId)">
-          编辑
+          配置
         </el-button>
         <el-button
           v-if="scope.row.isRunning === false"
