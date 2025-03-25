@@ -4,12 +4,12 @@ import { ElMessageBox } from 'element-plus'
 import { onMounted, ref, watch } from 'vue' // 引入 watch
 import { addTab, handleTabsEdit, initDefaultTab, restoreTabsFromLocalStorage, saveTabsToLocalStorage } from '~/utils/tabUtils'
 import ChartComponent from './1_components/ChartComponent.vue'
-import TableDataList from './1_components/TableDataList.vue'
 import TableDevList from './1_components/TableDevList.vue'
+import TabledevView from './1_components/TabledevView.vue'
 import TableTagList from './1_components/TableTagList.vue'
 
 // 定义标签页类型
-type TabType = 'devs' | 'tags' | 'data' | 'chart'
+type TabType = 'devs' | 'tags' | 'devView' | 'chart'
 
 // 指定唯一的 storageKey
 const devPage_storageKey = 'devtabs'
@@ -17,7 +17,7 @@ const devPage_storageKey = 'devtabs'
 // 动态组件映射
 const componentMap = {
   devs: TableDevList,
-  data: TableDataList,
+  devView: TabledevView,
   tags: TableTagList,
   chart: ChartComponent,
 }
@@ -64,8 +64,8 @@ function addNewTab(title: string, type: TabType, config: { apiUrl: string }, jso
 
 // 处理“数据”按钮点击事件
 function handleDataClick(devName: string, devDesc: string, devId: string, instId: string) {
-  const tabName = `数据[${devName}]`
-  addNewTab(tabName, 'data', {
+  const tabName = `查看[${devName}]`
+  addNewTab(tabName, 'devView', {
     apiUrl: `/api/v1/getDevvalues`,
   }, {
     devName,

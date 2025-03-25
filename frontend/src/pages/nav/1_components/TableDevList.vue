@@ -228,11 +228,11 @@ onUnmounted(() => {
     <el-table-column label="操作" width="200">
       <template #default="scope">
         <el-button size="small" type="info" @click="emit('data-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)">
-          数据
+          查看
         </el-button>
-        <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)">
-          点表
-        </el-button>
+        <!--        <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)"> -->
+        <!--          点表 -->
+        <!--        </el-button> -->
         <el-button
           size="small"
           type="danger"
