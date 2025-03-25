@@ -280,7 +280,7 @@ async function saveData() {
     // 4. 处理响应
     if (response.data.result === 'success') {
       ElMessage.success('设备新增采集点成功')
-      await fetchData() // 刷新数据
+      await fetchTagData() // 刷新数据
     }
     else {
       ElMessage.error(`保存失败: ${response.data.message}`)
@@ -298,7 +298,7 @@ function exportCSV() {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = `${props.jsonData.devName}.csv`
+  link.download = `${devName.value}-${devId.value}-tags.csv`
   link.click()
 }
 
