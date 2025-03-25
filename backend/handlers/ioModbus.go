@@ -127,7 +127,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 		client, err = modbus.NewClient(&modbus.ClientConfiguration{
 			URL:     protocol + "://" + host + ":" + strconv.Itoa(int(port)),
 			Speed:   9600,
-			Timeout: 1 * time.Second,
+			Timeout: 2 * time.Second,
 		})
 		if err != nil {
 			return fmt.Errorf("创建 Modbus 客户端失败: %v", err)
