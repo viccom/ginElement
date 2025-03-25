@@ -204,6 +204,7 @@ function handleAddClick() {
 function confirmAdd() {
   tableTag.value.push({ ...newRowData.value })
   isAddDialogVisible.value = false
+  total.value = tableTag.value.length // 更新总记录数
   ElMessage({
     message: `${newRowData.value.pointName} 已成功添加`,
     type: 'success',
@@ -232,6 +233,7 @@ function handleMultipleDelete() {
   tableTag.value = tableTag.value.filter(
     item => !selectedRows.value.some(selected => 'pointName' in selected && selected.pointName === (item as TagDataItem).pointName),
   )
+  total.value = tableTag.value.length // 更新总记录数
   ElMessage({
     message: `已成功删除 ${selectedRows.value.length} 条记录`,
     type: 'success',
@@ -303,31 +305,57 @@ function exportCSV() {
 }
 
 // 导入CSV
+
 async function handleImport(file: File) {
   const reader = new FileReader()
-  reader.onload = (e) => {
-    const csvContent = e.target?.result as string
-    const rows = csvContent.split('\n')
-    tableTag.value = rows.map((row) => {
-      const values = row.split(',')
-      return {
-        pointName: values[0],
-        description: values[1],
-        type: values[2],
-        prop1: values[3],
-        prop2: values[4],
-        prop3: values[5],
-        prop4: values[6],
+  try {
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      const rows = text.split('\n')
+      const parsedData: TagDataItem[] = []
+      let errorCount = 0 // 新增错误计数器
+
+      rows.forEach((row, index) => {
+        const cols = row.split(',')
+        if (cols.length < 3) {
+          errorCount++
+          ElMessage.error(`第${index + 1}行数据不足，需至少包含点名、描述、类型`)
+          return
+        }
+        parsedData.push({
+          pointName: (cols[0] || '').replace(/\s/g, ''),
+          description: (cols[1] || '').replace(/\s/g, ''),
+          type: (cols[2] || '').replace(/\s/g, ''),
+          prop1: (cols[3] || '').replace(/\s/g, '') || '',
+          prop2: (cols[4] || '').replace(/\s/g, '') || '',
+          prop3: (cols[5] || '').replace(/\s/g, '') || '',
+          prop4: (cols[6] || '').replace(/\s/g, '') || '',
+        })
+      })
+      console.log('导入的点表数据：', parsedData)
+      // 直接替换数据，无论是否有错误
+      tableTag.value = parsedData
+      total.value = tableTag.value.length // 更新总记录数
+      // 根据错误情况显示不同提示
+      if (errorCount > 0) {
+        ElMessage.warning(`共${errorCount}行数据不符合要求，已跳过`)
       }
-    })
-    ElMessage({
-      message: '数据已成功导入',
-      type: 'success',
-      duration: 3000,
-      center: true,
-    })
+      else {
+        ElMessage.success('导入成功，数据已替换')
+      }
+    }
+
+    reader.onerror = (error) => {
+      ElMessage.error('文件读取失败，请检查文件格式')
+      console.error('文件读取错误:', error)
+    }
+
+    reader.readAsText(file)
   }
-  reader.readAsText(file)
+  catch (error) {
+    ElMessage.error('导入过程中发生错误')
+    console.error('导入错误:', error)
+  }
 }
 
 // 修改数据
@@ -364,6 +392,7 @@ function handleModifyClick(row: TagDataItem) {
 function handleDeleteClick(pointName: string) {
   // 新增：根据pointName过滤删除当前行
   tableTag.value = tableTag.value.filter(item => item.pointName !== pointName)
+  total.value = tableTag.value.length // 更新总记录数
   ElMessage({
     message: `${pointName} 已成功删除`,
     type: 'success',
