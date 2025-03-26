@@ -316,6 +316,7 @@ async function handleImport(file: File) {
       let errorCount = 0 // 新增错误计数器
 
       rows.forEach((row, index) => {
+        console.log('Index:', index, 'Row:', row)
         const cols = row.split(',')
         if (cols.length < 3) {
           errorCount++
@@ -323,16 +324,16 @@ async function handleImport(file: File) {
           return
         }
         parsedData.push({
-          pointName: (cols[0] || '').replace(/\s/g, ''),
-          description: (cols[1] || '').replace(/\s/g, ''),
-          type: (cols[2] || '').replace(/\s/g, ''),
-          prop1: (cols[3] || '').replace(/\s/g, '') || '',
-          prop2: (cols[4] || '').replace(/\s/g, '') || '',
-          prop3: (cols[5] || '').replace(/\s/g, '') || '',
-          prop4: (cols[6] || '').replace(/\s/g, '') || '',
+          pointName: (cols[0] || '').trim(),
+          description: (cols[1] || '').trim(),
+          type: (cols[2] || '').trim(),
+          prop1: (cols[3] || '').trim() || '',
+          prop2: (cols[4] || '').trim() || '',
+          prop3: (cols[5] || '').trim() || '',
+          prop4: (cols[6] || '').trim() || '',
         })
       })
-      console.log('导入的点表数据：', parsedData)
+      // console.log('导入的点表数据：', parsedData)
       // 直接替换数据，无论是否有错误
       tableTag.value = parsedData
       total.value = tableTag.value.length // 更新总记录数
@@ -522,7 +523,6 @@ function handleDeleteClick(pointName: string) {
       </el-tab-pane>
 
       <el-tab-pane label="点表">
-        <!-- 移植 TableTagList.vue 的模板代码 -->
         <el-row :gutter="20">
           <el-col :span="3">
             <div>

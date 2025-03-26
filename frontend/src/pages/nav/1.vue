@@ -6,7 +6,6 @@ import { addTab, handleTabsEdit, initDefaultTab, restoreTabsFromLocalStorage, sa
 import ChartComponent from './1_components/ChartComponent.vue'
 import TableDevList from './1_components/TableDevList.vue'
 import TabledevView from './1_components/TabledevView.vue'
-import TableTagList from './1_components/TableTagList.vue'
 
 // 定义标签页类型
 type TabType = 'devs' | 'tags' | 'devView' | 'chart'
@@ -18,7 +17,6 @@ const devPage_storageKey = 'devtabs'
 const componentMap = {
   devs: TableDevList,
   devView: TabledevView,
-  tags: TableTagList,
   chart: ChartComponent,
 }
 

@@ -29,7 +29,6 @@ declare module 'vue-router/auto-routes' {
     '/nav/1_components/ChartComponent': RouteRecordInfo<'/nav/1_components/ChartComponent', '/nav/1_components/ChartComponent', Record<never, never>, Record<never, never>>,
     '/nav/1_components/TableDevList': RouteRecordInfo<'/nav/1_components/TableDevList', '/nav/1_components/TableDevList', Record<never, never>, Record<never, never>>,
     '/nav/1_components/TabledevView': RouteRecordInfo<'/nav/1_components/TabledevView', '/nav/1_components/TabledevView', Record<never, never>, Record<never, never>>,
-    '/nav/1_components/TableTagList': RouteRecordInfo<'/nav/1_components/TableTagList', '/nav/1_components/TableTagList', Record<never, never>, Record<never, never>>,
     '/nav/2': RouteRecordInfo<'/nav/2', '/nav/2', Record<never, never>, Record<never, never>>,
     '/nav/4': RouteRecordInfo<'/nav/4', '/nav/4', Record<never, never>, Record<never, never>>,
     '/nav/5': RouteRecordInfo<'/nav/5', '/nav/5', Record<never, never>, Record<never, never>>,

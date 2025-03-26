@@ -121,6 +121,8 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 	if len(opctags) == 0 {
 		log.Printf("实例ID %v 没有标签\n", id)
 		return
+	} else {
+		fmt.Printf("实例ID %v 可订阅标签点: %+v\n", id, opctags)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -202,8 +204,10 @@ func OpcUARead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.D
 
 	// 启动子线程
 	wg.Add(1)
-	go startCallbackSub(ctx, m, 1, 0, &wg, queue, opctags...)
-
+	// 修改原调用处：
+	validTags := validateNodes(ctx, c, opctags)
+	log.Printf("有效NodeId：%+v", validTags)
+	go startCallbackSub(ctx, m, 1, 0, &wg, queue, validTags...)
 	// 监听停止信号
 	for {
 		select {
@@ -267,17 +271,17 @@ func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag
 		func(s *monitor.Subscription, msg *monitor.DataChangeMessage) {
 			if msg.Error != nil {
 				log.Printf("[callback] sub=%d error=%s", s.SubscriptionID(), msg.Error)
-			} else {
-				valueMap := []any{msg.NodeID, msg.ServerTimestamp.Local().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix(), GetTypeString(msg.Value.Value())}
-				valueMapJson, _ := json.Marshal(valueMap)
-				queue.Enqueue(string(valueMapJson))
 			}
+			valueMap := []any{msg.NodeID, msg.ServerTimestamp.Local().Format("2006-01-02 15:04:05"), msg.Value.Value(), msg.ServerTimestamp.Unix(), GetTypeString(msg.Value.Value())}
+			valueMapJson, _ := json.Marshal(valueMap)
+			queue.Enqueue(string(valueMapJson))
 			time.Sleep(lag)
 		},
 		nodes...)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		//log.Fatal(err)
 	}
 
 	defer cleanup(ctx, sub)
@@ -288,4 +292,18 @@ func startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag
 func cleanup(ctx context.Context, sub *monitor.Subscription) {
 	log.Printf("统计: sub=%d 已传递=%d 已丢弃=%d", sub.SubscriptionID(), sub.Delivered(), sub.Dropped())
 	sub.Unsubscribe(ctx)
+}
+
+// 在订阅前添加节点有效性检查（新增函数）
+func validateNodes(ctx context.Context, c *opcua.Client, nodes []string) []string {
+	validNodes := make([]string, 0)
+	for _, nodeID := range nodes {
+		_, err := c.Node(ua.MustParseNodeID(nodeID)).Attributes(ctx, ua.AttributeIDNodeClass)
+		if err == nil {
+			validNodes = append(validNodes, nodeID)
+		} else {
+			log.Printf("[PRECHECK] 无效节点 %s 已被排除", nodeID)
+		}
+	}
+	return validNodes
 }
