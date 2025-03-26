@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"log"
 	"time"
 
-	"github.com/influxdata/influxdb-client-go/v2"
 	"github.com/nalgeon/redka"
 )
 
@@ -155,7 +155,9 @@ func dsInfluxdb(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 					}
 				}
 				OutterMapstr, _ := json.Marshal(OutterMap)
+				//fmt.Printf("生产者：缓存区存入前数据长度： %d \n", queue.Len())
 				queue.Enqueue(string(OutterMapstr))
+				//fmt.Printf("生产者：缓存区存入后数据长度： %d \n", queue.Len())
 				time.Sleep(time.Duration(cycle) * time.Second)
 			}
 		}
@@ -170,6 +172,7 @@ func dsInfluxdb(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				return
 			default:
 				for queue.Len() > 0 {
+					//fmt.Printf("消费者：缓存区取出前数据长度： %d \n", queue.Len())
 					if val, ok := queue.Dequeue(); ok {
 						var datasmap map[string]map[string][]any
 						errc := json.Unmarshal([]byte(val), &datasmap)
@@ -186,14 +189,13 @@ func dsInfluxdb(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 								if tsInt <= 1e12 { // 毫秒级时间戳
 									tsInt = tsInt * 1000
 								}
-
+								tags := map[string]string{"dev_id": devkey}
+								fields := map[string]interface{}{
+									"value": v,
+								}
 								// 构建 Line Protocol
-								point := influxdb2.NewPoint(
-									measurement,
-									map[string]string{"dev_id": devkey},
-									map[string]interface{}{"value": v},
-									time.Unix(0, tsInt),
-								)
+								//fmt.Printf("measurement：%s, tags：%v, fields: %v, tsInt: %v ,now：%v \n", measurement, tags, fields, time.UnixMilli(tsInt), time.Now())
+								point := influxdb2.NewPoint(measurement, tags, fields, time.UnixMilli(tsInt))
 
 								// 写入 InfluxDB
 								err := writeAPI.WritePoint(context.Background(), point)
@@ -205,6 +207,7 @@ func dsInfluxdb(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 					} else {
 						log.Println("队列数据取出失败")
 					}
+					//fmt.Printf("消费者：缓存区取出后数据长度： %d \n", queue.Len())
 				}
 				if queue.Len() == 0 {
 					time.Sleep(time.Duration(cycle) * time.Second)
