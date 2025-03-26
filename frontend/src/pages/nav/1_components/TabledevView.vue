@@ -401,6 +401,83 @@ function handleDeleteClick(pointName: string) {
     center: true,
   })
 }
+
+// 新增浮动面板相关变量
+const panelVisible = ref(false)
+const selectedIsRunning = ref(false)
+
+// 新增显示浮动面板的方法
+function showPanel(isRunning: boolean) {
+  selectedIsRunning.value = isRunning
+  panelVisible.value = true
+}
+
+// 新增启动方法
+async function handleStart() {
+  try {
+    const response = await axios.post('/api/v1/startApp', {
+      instid: instId.value,
+    })
+    if (response.data.data) {
+      ElMessage.success(`启动成功: ${instId.value}`)
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`启动失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`启动失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+  finally {
+    panelVisible.value = false
+  }
+}
+
+// 新增停止方法
+async function handleStop() {
+  try {
+    const response = await axios.post('/api/v1/stopApp', {
+      instid: instId.value,
+    })
+    if (response.data.data) {
+      ElMessage.success(`停止成功: ${instId.value}`)
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`停止失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`停止失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+  finally {
+    panelVisible.value = false
+  }
+}
+
+// 新增重启方法
+async function handleRestart() {
+  try {
+    const response = await axios.post('/api/v1/restartApp', {
+      instid: instId.value,
+    })
+    if (response.data.data) {
+      ElMessage.success(`重启成功: ${instId.value}`)
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`重启失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`重启失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+  finally {
+    panelVisible.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -462,16 +539,25 @@ function handleDeleteClick(pointName: string) {
           </el-col>
           <el-col :span="5">
             <div>
-              <el-input
-                v-model="instId"
-                style="max-width: 100%"
-                disabled
-                placeholder="Please input"
-              >
-                <template #prepend>
-                  实例：
+              <el-popover placement="bottom" trigger="hover">
+                <template #reference>
+                  <el-input
+                      v-model="instId"
+                      style="max-width: 100%"
+                      disabled
+                      placeholder="Please input"
+                  >
+                    <template #prepend>
+                      实例：
+                    </template>
+                  </el-input>
                 </template>
-              </el-input>
+                <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
+                  <el-menu-item v-if="!selectedIsRunning" index="start" @click="handleStart" class="start-button">启动</el-menu-item>
+                  <el-menu-item v-if="selectedIsRunning" index="stop" @click="handleStop" class="stop-button">停止</el-menu-item>
+                  <el-menu-item index="restart" @click="handleRestart" class="restart-button">重启</el-menu-item>
+                </el-menu>
+              </el-popover>
             </div>
           </el-col>
           <el-col :span="1">
@@ -558,11 +644,25 @@ function handleDeleteClick(pointName: string) {
           </el-col>
           <el-col :span="5">
             <div>
-              <el-input v-model="instId" style="max-width: 100%" disabled placeholder="Please input">
-                <template #prepend>
-                  实例：
+              <el-popover placement="bottom" trigger="hover">
+                <template #reference>
+                  <el-input
+                    v-model="instId"
+                    style="max-width: 100%"
+                    disabled
+                    placeholder="Please input"
+                  >
+                    <template #prepend>
+                      实例：
+                    </template>
+                  </el-input>
                 </template>
-              </el-input>
+                <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
+                  <el-menu-item v-if="!selectedIsRunning" index="start" @click="handleStart" class="start-button">启动</el-menu-item>
+                  <el-menu-item v-if="selectedIsRunning" index="stop" @click="handleStop" class="stop-button">停止</el-menu-item>
+                  <el-menu-item index="restart" @click="handleRestart" class="restart-button">重启</el-menu-item>
+                </el-menu>
+              </el-popover>
             </div>
           </el-col>
         </el-row>

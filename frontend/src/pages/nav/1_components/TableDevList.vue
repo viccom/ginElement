@@ -188,6 +188,83 @@ function checkDeviceName() {
     : ''
 }
 
+// 新增浮动面板相关变量
+const panelVisible = ref(false)
+const selectedIsRunning = ref(false)
+
+// 新增显示浮动面板的方法
+function showPanel(dev: DeviceData) {
+  selectedInstId.value = dev.instId
+  selectedIsRunning.value = dev.isRunning ?? false
+  panelVisible.value = true
+}
+
+// 新增启动方法
+async function handleStart(dev: DeviceData) {
+  try {
+    const response = await axios.post('/api/v1/startApp', {
+      instid: dev.instId,
+    })
+    if (response.data.data) {
+      ElMessage.success(`启动成功: ${dev.instId}`)
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`启动失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`启动失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+  finally {
+    panelVisible.value = false
+  }
+}
+
+// 新增停止方法
+async function handleStop(dev: DeviceData) {
+  try {
+    const response = await axios.post('/api/v1/stopApp', {
+      instid: dev.instId,
+    })
+    if (response.data.data) {
+      ElMessage.success(`停止成功: ${dev.instId}`)
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`停止失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`停止失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+  finally {
+    panelVisible.value = false
+  }
+}
+
+// 新增重启方法
+async function handleRestart(dev: DeviceData) {
+  try {
+    const response = await axios.post('/api/v1/restartApp', {
+      instid: dev.instId,
+    })
+    if (response.data.data) {
+      ElMessage.success(`重启成功: ${dev.instId}`)
+      fetchData() // 刷新表格数据
+    }
+    else {
+      ElMessage.error(`重启失败: ${response.data.details || '未知错误'}`)
+    }
+  }
+  catch (error) {
+    ElMessage.error(`重启失败: ${error.response?.data?.details || '网络错误'}`)
+  }
+  finally {
+    panelVisible.value = false
+  }
+}
+
 // 修改onMounted初始化
 onMounted(() => {
   fetchData()
@@ -209,7 +286,28 @@ onUnmounted(() => {
     <el-table-column prop="devDesc" label="设备描述" />
     <el-table-column prop="devId" label="设备ID" />
     <el-table-column prop="devType" label="设备类型" />
-    <el-table-column prop="instId" label="宿主ID" />
+    <el-table-column prop="instId" label="宿主ID">
+      <template #default="scope">
+        <el-popover placement="bottom" trigger="hover">
+          <template #reference>
+            <el-button size="small" type="text">
+              {{ scope.row.instId }}
+            </el-button>
+          </template>
+          <el-menu :default-active="scope.row.isRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
+            <el-menu-item v-if="!scope.row.isRunning" index="start" class="start-button" @click="handleStart(scope.row)">
+              启动
+            </el-menu-item>
+            <el-menu-item v-if="scope.row.isRunning" index="stop" class="stop-button" @click="handleStop(scope.row)">
+              停止
+            </el-menu-item>
+            <el-menu-item index="restart" class="restart-button" @click="handleRestart(scope.row)">
+              重启
+            </el-menu-item>
+          </el-menu>
+        </el-popover>
+      </template>
+    </el-table-column>
     <el-table-column label="宿主状态">
       <template #default="scope">
         <el-tag
@@ -230,9 +328,6 @@ onUnmounted(() => {
         <el-button size="small" type="info" @click="emit('data-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)">
           查看
         </el-button>
-        <!--        <el-button size="small" type="primary" @click="emit('point-click', scope.row.devName, scope.row.devDesc, scope.row.devId, scope.row.instId)"> -->
-        <!--          点表 -->
-        <!--        </el-button> -->
         <el-button
           size="small"
           type="danger"
@@ -246,7 +341,6 @@ onUnmounted(() => {
 
   <div style="display: flex; align-items: center; margin-bottom: 10px;">
     <el-button type="primary" @click="dialogVisible = true">
-      <!-- 修改按钮点击事件 -->
       新增设备
     </el-button>
   </div>
@@ -300,8 +394,6 @@ onUnmounted(() => {
     width="30%"
     draggable
   >
-    <!-- 删除原静态文本 -->
-    <!-- 新增动态显示 -->
     <span>确定要删除设备 <strong>{{ selectedDevName }}</strong> (ID: {{ selectedDevId }}) 吗？</span>
     <template #footer>
       <el-button @click="confirmDeleteVisible = false">
