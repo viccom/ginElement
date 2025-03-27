@@ -121,6 +121,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 
 	var client *modbus.ModbusClient
 	var mbConnected = false
+	var mbErrCount = 0
 
 	// 连接 Modbus 服务器
 	connect := func() error {
@@ -154,6 +155,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				log.Printf("尝试连接 Modbus 服务器\n")
 				if err := connect(); err == nil {
 					log.Println("连接成功")
+					mbErrCount = 0
 					return true
 				}
 				log.Printf("连接失败，等待 %v 后重试\n", reconnectDelay)
@@ -208,7 +210,7 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				err = client.SetUnitId(uint8(deviceUnitid))
 				if err != nil {
 					log.Printf("设置 Unit ID 失败: %v\n", err)
-					mbConnected = false
+					//mbConnected = false
 					break
 				}
 
@@ -230,8 +232,10 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 
 				if errmb != nil {
 					log.Printf("读取 Modbus 数据失败: %v\n", errmb)
-					mbConnected = false
-					break
+					mbErrCount = mbErrCount + 1
+					continue
+					//mbConnected = false
+					//break
 				}
 				if value == nil {
 					log.Printf("读取 Modbus 数据为空\n")
@@ -257,6 +261,10 @@ func ModbusRead(id string, stopChan chan struct{}, cfgdb *redka.DB, rtdb *redka.
 				}
 			}
 
+			if mbErrCount >= 5 {
+				log.Printf("连续 %d 次读取失败，尝试重新连接\n", mbErrCount)
+				mbConnected = false
+			}
 			time.Sleep(1 * time.Second)
 		}
 	}
