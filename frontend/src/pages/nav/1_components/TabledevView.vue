@@ -24,6 +24,10 @@ const instId = ref(props.jsonData.instId)
 const devDesc = ref(props.jsonData.devDesc)
 const devId = ref(props.jsonData.devId)
 
+// 新增：定义 instStatus 和 selectedIsRunning
+const instStatus = ref('')
+const selectedIsRunning = ref(false)
+
 // 定义表格数据的类型
 interface TagData {
   tagName: string
@@ -59,6 +63,7 @@ const total = ref(0)
 
 // 定时器 ID
 let intervalId: number | null = null
+let intervalappsId: number | null = null
 
 // 新增：处理每页记录数变化
 function handleSizeChange(size: number) {
@@ -137,17 +142,42 @@ async function fetchTagData() {
   }
 }
 
+// 新增获取实例列表的函数
+async function fetchApps() {
+  try {
+    const response = await axios.get('/api/v1/listApps')
+    const appsData = response.data.data
+
+    // 通过 instId 匹配数据
+    for (const key in appsData) {
+      if (appsData[key].instId === instId.value) {
+        instStatus.value = appsData[key].isRunning ? 'running' : 'stopped' // 假设 isRunning 为 true 时为运行状态
+        selectedIsRunning.value = appsData[key].isRunning
+        break
+      }
+    }
+  }
+  catch (error) {
+    console.error('获取实例列表失败:', error)
+  }
+}
+
 // 组件挂载时启动定时器
 onMounted(() => {
   fetchData()
   fetchTagData()
+  fetchApps()
   intervalId = setInterval(fetchData, 3000)
+  intervalappsId = setInterval(fetchApps, 3000)
 })
 
 // 组件卸载时清除定时器
 onUnmounted(() => {
   if (intervalId) {
     clearInterval(intervalId)
+  }
+  if (intervalappsId) {
+    clearInterval(intervalappsId)
   }
 })
 
@@ -467,7 +497,6 @@ async function handleRestart() {
     panelVisible.value = false
   }
 }
-
 </script>
 
 <template>
@@ -485,7 +514,7 @@ async function handleRestart() {
             </div>
           </el-col>
 
-          <el-col :span="4">
+          <el-col :span="3">
             <div>
               <el-input
                 v-model="devName"
@@ -499,7 +528,7 @@ async function handleRestart() {
               </el-input>
             </div>
           </el-col>
-          <el-col :span="4">
+          <el-col :span="3">
             <div>
               <el-input
                 v-model="devDesc"
@@ -513,7 +542,7 @@ async function handleRestart() {
               </el-input>
             </div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="4">
             <div>
               <el-input
                 v-model="devId"
@@ -527,16 +556,45 @@ async function handleRestart() {
               </el-input>
             </div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="4">
+            <div>
+              <el-popover placement="bottom" trigger="hover">
+                <template #reference>
+                  <el-input
+                    v-model="instId"
+                    style="max-width: 100%"
+                    disabled
+                    placeholder="Please input"
+                  >
+                    <template #prepend>
+                      实例：
+                    </template>
+                  </el-input>
+                </template>
+                <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
+                  <el-menu-item v-if="!selectedIsRunning" index="start" class="start-button" @click="handleStart">
+                    启动
+                  </el-menu-item>
+                  <el-menu-item v-if="selectedIsRunning" index="stop" class="stop-button" @click="handleStop" style="color: darkred;">
+                    停止
+                  </el-menu-item>
+                  <el-menu-item index="restart" class="restart-button" @click="handleRestart">
+                    重启
+                  </el-menu-item>
+                </el-menu>
+              </el-popover>
+            </div>
+          </el-col>
+          <el-col :span="4">
             <div>
               <el-input
-                v-model="instId"
+                v-model="instStatus"
                 style="max-width: 100%"
                 disabled
                 placeholder="Please input"
               >
                 <template #prepend>
-                  实例：
+                  实例状态：
                 </template>
               </el-input>
             </div>
@@ -591,12 +649,12 @@ async function handleRestart() {
 
       <el-tab-pane label="点表">
         <el-row :gutter="20">
-          <el-col :span="3">
+          <el-col :span="2">
             <div>
               <el-input v-model="tagsearch" placeholder="请输入点名过滤" clearable />
             </div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="3">
             <div>
               <el-input v-model="devName" style="max-width: 100%" disabled placeholder="Please input">
                 <template #prepend>
@@ -605,7 +663,7 @@ async function handleRestart() {
               </el-input>
             </div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="3">
             <div>
               <el-input v-model="devDesc" style="max-width: 100%" disabled placeholder="Please input">
                 <template #prepend>
@@ -614,7 +672,7 @@ async function handleRestart() {
               </el-input>
             </div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="4">
             <div>
               <el-input v-model="devId" style="max-width: 100%" disabled placeholder="Please input">
                 <template #prepend>
@@ -623,16 +681,45 @@ async function handleRestart() {
               </el-input>
             </div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="4">
+            <div>
+              <el-popover placement="bottom" trigger="hover">
+                <template #reference>
+                  <el-input
+                    v-model="instId"
+                    style="max-width: 100%"
+                    disabled
+                    placeholder="Please input"
+                  >
+                    <template #prepend>
+                      实例：
+                    </template>
+                  </el-input>
+                </template>
+                <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
+                  <el-menu-item v-if="!selectedIsRunning" index="start" class="start-button" @click="handleStart">
+                    启动
+                  </el-menu-item>
+                  <el-menu-item v-if="selectedIsRunning" index="stop" class="stop-button" @click="handleStop" style="color: darkred;">
+                    停止
+                  </el-menu-item>
+                  <el-menu-item index="restart" class="restart-button" @click="handleRestart">
+                    重启
+                  </el-menu-item>
+                </el-menu>
+              </el-popover>
+            </div>
+          </el-col>
+          <el-col :span="4">
             <div>
               <el-input
-                v-model="instId"
+                v-model="instStatus"
                 style="max-width: 100%"
                 disabled
                 placeholder="Please input"
               >
                 <template #prepend>
-                  实例：
+                  实例状态：
                 </template>
               </el-input>
             </div>
@@ -781,27 +868,6 @@ async function handleRestart() {
         </el-dialog>
       </el-tab-pane>
     </el-tabs>
-
-    <!-- 新增公共 el-popover -->
-    <el-popover placement="bottom" trigger="hover" v-if="panelVisible">
-      <template #reference>
-        <el-input
-          v-model="instId"
-          style="max-width: 100%"
-          disabled
-          placeholder="Please input"
-        >
-          <template #prepend>
-            实例：
-          </template>
-        </el-input>
-      </template>
-      <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
-        <el-menu-item v-if="!selectedIsRunning" index="start" @click="handleStart" class="start-button">启动</el-menu-item>
-        <el-menu-item v-if="selectedIsRunning" index="stop" @click="handleStop" class="stop-button">停止</el-menu-item>
-        <el-menu-item index="restart" @click="handleRestart" class="restart-button">重启</el-menu-item>
-      </el-menu>
-    </el-popover>
   </div>
 </template>
 

@@ -99,6 +99,12 @@ async function fetchApps() {
   }
 }
 
+// 新增获取实例列表的函数
+async function addNewDevice() {
+  await fetchApps()
+  dialogVisible.value = true
+}
+
 // 新增表单提交处理
 async function handleFormSubmit() {
   if (!formData.value.devName) {
@@ -188,17 +194,6 @@ function checkDeviceName() {
     : ''
 }
 
-// 新增浮动面板相关变量
-const panelVisible = ref(false)
-const selectedIsRunning = ref(false)
-
-// 新增显示浮动面板的方法
-function showPanel(dev: DeviceData) {
-  selectedInstId.value = dev.instId
-  selectedIsRunning.value = dev.isRunning ?? false
-  panelVisible.value = true
-}
-
 // 新增启动方法
 async function handleStart(dev: DeviceData) {
   try {
@@ -217,7 +212,7 @@ async function handleStart(dev: DeviceData) {
     ElMessage.error(`启动失败: ${error.response?.data?.details || '网络错误'}`)
   }
   finally {
-    panelVisible.value = false
+
   }
 }
 
@@ -239,7 +234,7 @@ async function handleStop(dev: DeviceData) {
     ElMessage.error(`停止失败: ${error.response?.data?.details || '网络错误'}`)
   }
   finally {
-    panelVisible.value = false
+
   }
 }
 
@@ -261,7 +256,7 @@ async function handleRestart(dev: DeviceData) {
     ElMessage.error(`重启失败: ${error.response?.data?.details || '网络错误'}`)
   }
   finally {
-    panelVisible.value = false
+
   }
 }
 
@@ -298,7 +293,7 @@ onUnmounted(() => {
             <el-menu-item v-if="!scope.row.isRunning" index="start" class="start-button" @click="handleStart(scope.row)">
               启动
             </el-menu-item>
-            <el-menu-item v-if="scope.row.isRunning" index="stop" class="stop-button" @click="handleStop(scope.row)">
+            <el-menu-item v-if="scope.row.isRunning" index="stop" class="stop-button" @click="handleStop(scope.row)" style="color: darkred;">
               停止
             </el-menu-item>
             <el-menu-item index="restart" class="restart-button" @click="handleRestart(scope.row)">
@@ -340,7 +335,7 @@ onUnmounted(() => {
   </el-table>
 
   <div style="display: flex; align-items: center; margin-bottom: 10px;">
-    <el-button type="primary" @click="dialogVisible = true">
+    <el-button type="primary" @click="addNewDevice">
       新增设备
     </el-button>
   </div>
