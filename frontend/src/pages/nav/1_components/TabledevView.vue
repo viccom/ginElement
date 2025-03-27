@@ -402,16 +402,6 @@ function handleDeleteClick(pointName: string) {
   })
 }
 
-// 新增浮动面板相关变量
-const panelVisible = ref(false)
-const selectedIsRunning = ref(false)
-
-// 新增显示浮动面板的方法
-function showPanel(isRunning: boolean) {
-  selectedIsRunning.value = isRunning
-  panelVisible.value = true
-}
-
 // 新增启动方法
 async function handleStart() {
   try {
@@ -539,25 +529,16 @@ async function handleRestart() {
           </el-col>
           <el-col :span="5">
             <div>
-              <el-popover placement="bottom" trigger="hover">
-                <template #reference>
-                  <el-input
-                      v-model="instId"
-                      style="max-width: 100%"
-                      disabled
-                      placeholder="Please input"
-                  >
-                    <template #prepend>
-                      实例：
-                    </template>
-                  </el-input>
+              <el-input
+                v-model="instId"
+                style="max-width: 100%"
+                disabled
+                placeholder="Please input"
+              >
+                <template #prepend>
+                  实例：
                 </template>
-                <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
-                  <el-menu-item v-if="!selectedIsRunning" index="start" @click="handleStart" class="start-button">启动</el-menu-item>
-                  <el-menu-item v-if="selectedIsRunning" index="stop" @click="handleStop" class="stop-button">停止</el-menu-item>
-                  <el-menu-item index="restart" @click="handleRestart" class="restart-button">重启</el-menu-item>
-                </el-menu>
-              </el-popover>
+              </el-input>
             </div>
           </el-col>
           <el-col :span="1">
@@ -644,25 +625,16 @@ async function handleRestart() {
           </el-col>
           <el-col :span="5">
             <div>
-              <el-popover placement="bottom" trigger="hover">
-                <template #reference>
-                  <el-input
-                    v-model="instId"
-                    style="max-width: 100%"
-                    disabled
-                    placeholder="Please input"
-                  >
-                    <template #prepend>
-                      实例：
-                    </template>
-                  </el-input>
+              <el-input
+                v-model="instId"
+                style="max-width: 100%"
+                disabled
+                placeholder="Please input"
+              >
+                <template #prepend>
+                  实例：
                 </template>
-                <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
-                  <el-menu-item v-if="!selectedIsRunning" index="start" @click="handleStart" class="start-button">启动</el-menu-item>
-                  <el-menu-item v-if="selectedIsRunning" index="stop" @click="handleStop" class="stop-button">停止</el-menu-item>
-                  <el-menu-item index="restart" @click="handleRestart" class="restart-button">重启</el-menu-item>
-                </el-menu>
-              </el-popover>
+              </el-input>
             </div>
           </el-col>
         </el-row>
@@ -809,6 +781,27 @@ async function handleRestart() {
         </el-dialog>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 新增公共 el-popover -->
+    <el-popover placement="bottom" trigger="hover" v-if="panelVisible">
+      <template #reference>
+        <el-input
+          v-model="instId"
+          style="max-width: 100%"
+          disabled
+          placeholder="Please input"
+        >
+          <template #prepend>
+            实例：
+          </template>
+        </el-input>
+      </template>
+      <el-menu :default-active="selectedIsRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
+        <el-menu-item v-if="!selectedIsRunning" index="start" @click="handleStart" class="start-button">启动</el-menu-item>
+        <el-menu-item v-if="selectedIsRunning" index="stop" @click="handleStop" class="stop-button">停止</el-menu-item>
+        <el-menu-item index="restart" @click="handleRestart" class="restart-button">重启</el-menu-item>
+      </el-menu>
+    </el-popover>
   </div>
 </template>
 
