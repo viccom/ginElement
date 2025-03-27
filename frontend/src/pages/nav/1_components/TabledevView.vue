@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { TableInstance } from 'element-plus'
 import { Download, Finished, Plus, Refresh, Upload } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
@@ -17,7 +18,7 @@ const props = defineProps<{
 }>()
 
 // 使用 props.jsonData 中的数据
-console.log(props.jsonData.devName)
+// console.log(props.jsonData.devName)
 
 const devName = ref(props.jsonData.devName)
 const instId = ref(props.jsonData.instId)
@@ -27,6 +28,9 @@ const devId = ref(props.jsonData.devId)
 // 新增：定义 instStatus 和 selectedIsRunning
 const instStatus = ref('')
 const selectedIsRunning = ref(false)
+
+const datatableLayout = ref<TableInstance['tableLayout']>('fixed')
+const tagtableLayout = ref<TableInstance['tableLayout']>('auto')
 
 // 定义表格数据的类型
 interface TagData {
@@ -151,7 +155,7 @@ async function fetchApps() {
     // 通过 instId 匹配数据
     for (const key in appsData) {
       if (appsData[key].instId === instId.value) {
-        instStatus.value = appsData[key].isRunning ? 'running' : 'stopped' // 假设 isRunning 为 true 时为运行状态
+        instStatus.value = appsData[key].isRunning ? '运行' : '停止' // 假设 isRunning 为 true 时为运行状态
         selectedIsRunning.value = appsData[key].isRunning
         break
       }
@@ -449,9 +453,6 @@ async function handleStart() {
   catch (error) {
     ElMessage.error(`启动失败: ${error.response?.data?.details || '网络错误'}`)
   }
-  finally {
-    panelVisible.value = false
-  }
 }
 
 // 新增停止方法
@@ -471,9 +472,6 @@ async function handleStop() {
   catch (error) {
     ElMessage.error(`停止失败: ${error.response?.data?.details || '网络错误'}`)
   }
-  finally {
-    panelVisible.value = false
-  }
 }
 
 // 新增重启方法
@@ -492,9 +490,6 @@ async function handleRestart() {
   }
   catch (error) {
     ElMessage.error(`重启失败: ${error.response?.data?.details || '网络错误'}`)
-  }
-  finally {
-    panelVisible.value = false
   }
 }
 </script>
@@ -575,7 +570,7 @@ async function handleRestart() {
                   <el-menu-item v-if="!selectedIsRunning" index="start" class="start-button" @click="handleStart">
                     启动
                   </el-menu-item>
-                  <el-menu-item v-if="selectedIsRunning" index="stop" class="stop-button" @click="handleStop" style="color: darkred;">
+                  <el-menu-item v-if="selectedIsRunning" index="stop" class="stop-button" style="color: darkred;" @click="handleStop">
                     停止
                   </el-menu-item>
                   <el-menu-item index="restart" class="restart-button" @click="handleRestart">
@@ -609,7 +604,11 @@ async function handleRestart() {
         </el-row>
 
         <!-- 表格 -->
-        <el-table :data="tableData.filter(data => !datasearch || data.tagName.includes(datasearch)).slice((currentPage - 1) * pageSize, currentPage * pageSize)" style="width: 96%">
+        <el-table
+          :data="tableData.filter(data => !datasearch || data.tagName.includes(datasearch)).slice((currentPage - 1) * pageSize, currentPage * pageSize)"
+          style="width: 96%"
+          :table-layout="datatableLayout"
+        >
           <!-- 第1列：名称 -->
           <el-table-column prop="tagName" label="名称" />
           <!-- 第2列：时间（支持排序） -->
@@ -700,7 +699,7 @@ async function handleRestart() {
                   <el-menu-item v-if="!selectedIsRunning" index="start" class="start-button" @click="handleStart">
                     启动
                   </el-menu-item>
-                  <el-menu-item v-if="selectedIsRunning" index="stop" class="stop-button" @click="handleStop" style="color: darkred;">
+                  <el-menu-item v-if="selectedIsRunning" index="stop" class="stop-button" style="color: darkred;" @click="handleStop">
                     停止
                   </el-menu-item>
                   <el-menu-item index="restart" class="restart-button" @click="handleRestart">
@@ -729,6 +728,7 @@ async function handleRestart() {
         <el-table
           :data="tableTag.filter(data => !tagsearch || data.pointName.includes(tagsearch)).slice((currentPage - 1) * pageSize, currentPage * pageSize)"
           style="width: 96%"
+          :table-layout="tagtableLayout"
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" />

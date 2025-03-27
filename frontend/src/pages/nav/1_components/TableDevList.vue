@@ -30,7 +30,7 @@ const props = defineProps<{
 const emit = defineEmits(['data-click', 'point-click'])
 
 // 使用 props.jsonData 中的数据
-console.log(props.jsonData.devName)
+// console.log(props.jsonData.devName)
 
 // 定义 tableData 的类型为 DeviceData[]
 const tableData = ref<DeviceData[]>([])
@@ -211,9 +211,6 @@ async function handleStart(dev: DeviceData) {
   catch (error) {
     ElMessage.error(`启动失败: ${error.response?.data?.details || '网络错误'}`)
   }
-  finally {
-
-  }
 }
 
 // 新增停止方法
@@ -233,9 +230,6 @@ async function handleStop(dev: DeviceData) {
   catch (error) {
     ElMessage.error(`停止失败: ${error.response?.data?.details || '网络错误'}`)
   }
-  finally {
-
-  }
 }
 
 // 新增重启方法
@@ -254,9 +248,6 @@ async function handleRestart(dev: DeviceData) {
   }
   catch (error) {
     ElMessage.error(`重启失败: ${error.response?.data?.details || '网络错误'}`)
-  }
-  finally {
-
   }
 }
 
@@ -281,28 +272,29 @@ onUnmounted(() => {
     <el-table-column prop="devDesc" label="设备描述" />
     <el-table-column prop="devId" label="设备ID" />
     <el-table-column prop="devType" label="设备类型" />
-    <el-table-column prop="instId" label="宿主ID">
-      <template #default="scope">
-        <el-popover placement="bottom" trigger="hover">
-          <template #reference>
-            <el-button size="small" type="text">
-              {{ scope.row.instId }}
-            </el-button>
-          </template>
-          <el-menu :default-active="scope.row.isRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical">
-            <el-menu-item v-if="!scope.row.isRunning" index="start" class="start-button" @click="handleStart(scope.row)">
-              启动
-            </el-menu-item>
-            <el-menu-item v-if="scope.row.isRunning" index="stop" class="stop-button" @click="handleStop(scope.row)" style="color: darkred;">
-              停止
-            </el-menu-item>
-            <el-menu-item index="restart" class="restart-button" @click="handleRestart(scope.row)">
-              重启
-            </el-menu-item>
-          </el-menu>
-        </el-popover>
-      </template>
-    </el-table-column>
+    <el-table-column prop="instId" label="宿主ID" />
+    <!--    <el-table-column prop="instId" label="宿主ID"> -->
+    <!--      <template #default="scope"> -->
+    <!--        <el-popover placement="bottom" trigger="hover"> -->
+    <!--          <template #reference> -->
+    <!--            <el-button size="small" type="text"> -->
+    <!--              {{ scope.row.instId }} -->
+    <!--            </el-button> -->
+    <!--          </template> -->
+    <!--          <el-menu :default-active="scope.row.isRunning ? 'stop' : 'start'" class="el-menu-demo" mode="vertical"> -->
+    <!--            <el-menu-item v-if="!scope.row.isRunning" index="start" @click="handleStart(scope.row)"> -->
+    <!--              启动 -->
+    <!--            </el-menu-item> -->
+    <!--            <el-menu-item v-if="scope.row.isRunning" index="stop" style="color: darkred;" @click="handleStop(scope.row)"> -->
+    <!--              停止 -->
+    <!--            </el-menu-item> -->
+    <!--            <el-menu-item index="restart" @click="handleRestart(scope.row)"> -->
+    <!--              重启 -->
+    <!--            </el-menu-item> -->
+    <!--          </el-menu> -->
+    <!--        </el-popover> -->
+    <!--      </template> -->
+    <!--    </el-table-column> -->
     <el-table-column label="宿主状态">
       <template #default="scope">
         <el-tag

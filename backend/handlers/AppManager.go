@@ -525,10 +525,16 @@ func RestartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 	stopChan, exists := Workers[instid]
 	if exists {
 		close(stopChan)
+		// 延时1秒
+		time.Sleep(2 * time.Second)
 		delete(Workers, instid)
 	}
-	// 延时1秒
-	time.Sleep(1 * time.Second)
+
+	//再次检测是否停止成功
+	// 检查全局变量 Workers 是否已删除对应的线程 ID
+	if _, cexists := Workers[instid]; !cexists {
+		fmt.Printf("RestartApp提示：Worker %s 已成功从退出\n", instid)
+	}
 	// 第二步：获取实例配置信息
 	value, err := cfgdb.Hash().Get(InstListKey, instid)
 	if err != nil {
@@ -578,6 +584,9 @@ func RestartApp(c *gin.Context, cfgdb *redka.DB, rtdb *redka.DB) {
 		fn(instid, stopChan, cfgdb, rtdb)
 	}()
 
+	if _, dexists := Workers[instid]; dexists {
+		fmt.Printf("RestartApp提示：Worker %s restarted\n", instid)
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Worker restarted",
 		"data":    instopt,
